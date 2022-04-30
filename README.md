@@ -29,7 +29,7 @@ The blackbird provides the following:
 
 * **Migration** - Blackbird storage model is (Key, Document)
   if you want change Document Model, can use `migration::run` to change all (Key, Document)
-  already exist in disk, this module should use before storage opened
+  already exist in disk, this module should be use before storage opened
 
 
 
