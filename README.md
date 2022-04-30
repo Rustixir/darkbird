@@ -1,5 +1,5 @@
 
-![DarkBird](https://github.com/Rustixir/blackbird/blob/main/blackbird.png)
+![DarkBird](https://github.com/Rustixir/darkbird/blob/main/darkbird.png)
 
 
 
@@ -45,10 +45,12 @@ The darkbird provides the following:
 Examples
 =============
 
-The complete Examples on [Link](https://github.com/Rustixir/blackbird/tree/main/example).
+The complete Examples on [Link](https://github.com/Rustixir/darkbird/tree/main/example).
 
 
 
 Crate
 =============
-Link []()
+```
+darkbird = "1.0.0"
+```
