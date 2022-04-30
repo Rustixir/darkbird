@@ -7,8 +7,8 @@ readme = "README.md"
 description = "High concurrency, RealTime, In-memory storage inspired by erlang mnesia"
 license = "Apache-2.0"
 keywords = ["in-memory", "storage", "durable", "high-concurrency", "database"]
-homepage   = "https://github.com/Rustixir/blackbird"
-repository = "https://github.com/Rustixir/blackbird"
+homepage   = "https://github.com/Rustixir/darkbird"
+repository = "https://github.com/Rustixir/darkbird"
 
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
