@@ -36,18 +36,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "bef38d45163c2f1dde094a7dfd33ccf595c92905c8f8f4fdc18d06fb1037718a"
 
 [[package]]
-name = "blackbird"
-version = "1.0.0"
-dependencies = [
- "bincode",
- "dashmap",
- "serde",
- "serde_derive",
- "simple_wal",
- "tokio",
-]
-
-[[package]]
 name = "cfg-if"
 version = "1.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -60,6 +48,18 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "b540bd8bc810d3885c6ea91e2018302f68baba2129ab3e88f32389ee9370880d"
 dependencies = [
  "cfg-if",
+]
+
+[[package]]
+name = "darkbird"
+version = "1.0.0"
+dependencies = [
+ "bincode",
+ "dashmap",
+ "serde",
+ "serde_derive",
+ "simple_wal",
+ "tokio",
 ]
 
 [[package]]
