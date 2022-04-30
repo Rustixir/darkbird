@@ -1,9 +1,9 @@
 
-![BlackBird](https://github.com/Rustixir/blackbird/blob/main/blackbird.png)
+![DarkBird](https://github.com/Rustixir/blackbird/blob/main/blackbird.png)
 
 
 
-Blackbird is a high concurrency in-memory Storage also 
+DarkBird is a high concurrency in-memory Storage also 
 persist data to disk to avoid loss any data
 
 
