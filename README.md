@@ -1,13 +1,13 @@
 
-![BlackBird](https://github.com/Rustixir/blackbird/blob/main/blackbird.png)
+![DarkBird](https://github.com/Rustixir/blackbird/blob/main/blackbird.png)
 
 
 
-Blackbird is a high concurrency in-memory Storage also 
+Darkbird is a high concurrency in-memory Storage also 
 persist data to disk to avoid loss any data
 
 
-The blackbird provides the following:
+The darkbird provides the following:
 
 * **Persistent** - use **Non-Blocking** wal engine for persist data, 
   also store data to multiple pages by total_page_size
@@ -16,12 +16,12 @@ The blackbird provides the following:
 
 * **In-memory** - whole data stored in-memory and have two mode ( DiskCopies, RamCopies )
   both stored in-memory but DiskCopies persist data to disk and
-  after restart, blackbird load whole data to memory 
+  after restart, darkbird load whole data to memory 
 
 
 
 
-* **Concurrency** - blackbird use one of best high-concurrent HashMap (DashMap)[https://github.com/xacrimon/conc-map-bench]
+* **Concurrency** - darkbird use one of best high-concurrent HashMap (DashMap)[https://github.com/xacrimon/conc-map-bench]
   and you dont need use Mutex/RwLock for sync between thread,
   storage is complete safe to shared between thread
 
@@ -29,7 +29,7 @@ The blackbird provides the following:
 
 
 
-* **Migration** - Blackbird storage model is (Key, Document)
+* **Migration** - DarkBird storage model is (Key, Document)
   if you want change Document Model, can use `migration::run` to change all (Key, Document)
   already exist in disk, this module should be use before storage opened
 
