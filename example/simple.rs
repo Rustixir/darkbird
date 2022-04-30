@@ -1,12 +1,3 @@
-use std::sync::Arc;
-
-use blackbird::{storage::Storage, RQuery, Event, migration};
-use serde_derive::{Serialize, Deserialize};
-use tokio::sync::mpsc::{channel, self};
-
-
-mod blackbird;
-
 
 #[tokio::main]
 async fn main() {
