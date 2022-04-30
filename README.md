@@ -16,12 +16,12 @@ The darkbird provides the following:
 
 * **In-memory** - whole data stored in-memory and have two mode ( DiskCopies, RamCopies )
   both stored in-memory but DiskCopies persist data to disk and
-  after restart, darkbird load whole data to memory 
+  after restart, Darkbird load whole data to memory 
 
 
 
 
-* **Concurrency** - darkbird use one of best high-concurrent HashMap (DashMap)[https://github.com/xacrimon/conc-map-bench]
+* **Concurrency** - Darkbird use one of best high-concurrent HashMap (DashMap)[https://github.com/xacrimon/conc-map-bench]
   and you dont need use Mutex/RwLock for sync between thread,
   storage is complete safe to shared between thread
 
@@ -29,7 +29,7 @@ The darkbird provides the following:
 
 
 
-* **Migration** - DarkBird storage model is (Key, Document)
+* **Migration** - Darkbird storage model is (Key, Document)
   if you want change Document Model, can use `migration::run` to change all (Key, Document)
   already exist in disk, this module should be use before storage opened
 
