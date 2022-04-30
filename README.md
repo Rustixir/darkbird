@@ -1,5 +1,5 @@
 
-![BlackBird](https://github.com/Rustixir/BlackBird/blob/master/New%20Project.png)
+![BlackBird](https://github.com/Rustixir/blackbird/blob/main/New%20Project.png)
 
 
 
@@ -20,6 +20,7 @@ The blackbird provides the following:
 
 
 
+
 * **Concurrency** - blackbird use one of best high-concurrent HashMap (DashMap)[https://github.com/xacrimon/conc-map-bench]
   and you dont need use Mutex/RwLock for sync between thread,
   storage is complete safe to shared between thread
@@ -27,9 +28,11 @@ The blackbird provides the following:
 
 
 
+
 * **Migration** - Blackbird storage model is (Key, Document)
   if you want change Document Model, can use `migration::run` to change all (Key, Document)
   already exist in disk, this module should be use before storage opened
+
 
 
 
