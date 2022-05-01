@@ -2,12 +2,8 @@
 ![DarkBird](https://github.com/Rustixir/darkbird/blob/main/darkbird.png)
 
 
-<<<<<<< HEAD
-**DarkBird is an Document oriented, high concurrency in-memory Storage , also persist data to disk to avoid loss any data**
-=======
-**DarkBird is a Document oriented, high concurrency in-memory Storage, 
+**DarkBird is an Document oriented, high concurrency in-memory Storage, 
 also persist data to disk to avoid loss any data**
->>>>>>> 188f0388704927202bfcda39ded23fd3b2c82ec7
 
 
 
