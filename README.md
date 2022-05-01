@@ -1,6 +1,15 @@
 
 ![DarkBird](https://github.com/Rustixir/darkbird/blob/main/darkbird.png)
 
+<div align="center">
+
+  <!-- Downloads -->
+  <a href="https://crates.io/crates/darkbird">
+    <img src="https://img.shields.io/crates/d/darkbird.svg?style=flat-square"
+      alt="Download" />
+  </a>
+</div>
+
 
 **DarkBird is a Document oriented, high concurrency in-memory Storage, 
 also persist data to disk to avoid loss any data**
