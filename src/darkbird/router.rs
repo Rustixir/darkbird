@@ -1,9 +1,9 @@
-use crate::blackbird::{SessionResult, TIMEOUT, Status};
+use crate::darkbird::{SessionResult, TIMEOUT, Status};
 use tokio::sync::mpsc::Sender;
 use tokio::sync::mpsc;
 use tokio::sync::mpsc::error::SendTimeoutError;
 
-use crate::blackbird::WorkerState;
+use crate::darkbird::WorkerState;
 
 
 /// In some cases it is useful to distribute messages of the same type over a set of channels, 

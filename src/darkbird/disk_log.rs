@@ -370,7 +370,7 @@ impl Context {
 // -------------------------------------------------
 
 
-use crate::blackbird::{SessionResult, StatusResult};
+use crate::darkbird::{SessionResult, StatusResult};
 
 use std::time::Duration;
 use std::{path::Path, fs};

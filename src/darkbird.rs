@@ -13,7 +13,7 @@ pub mod migration;
 pub static TIMEOUT: Duration = Duration::from_secs(5);
 
 
-pub use storage::{RQuery, Event};
+pub use storage::{Event, RQuery};
 
 
 

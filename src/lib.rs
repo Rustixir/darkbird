@@ -1,8 +1,8 @@
 
 
-mod blackbird;
+mod darkbird;
 
-pub use blackbird::{
+pub use darkbird::{
     storage::Storage, 
     RQuery, 
     Event,
