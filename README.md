@@ -56,5 +56,5 @@ The complete Examples on [Link](https://github.com/Rustixir/darkbird/tree/main/e
 Crate
 =============
 ```
-darkbird = "1.1.0"
+darkbird = "1.1.1"
 ```
