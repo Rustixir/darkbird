@@ -85,7 +85,6 @@ pub enum Request<Msg> {
 
 
 pub enum RouterType {
-    RoundRobin,
     Broadcast
 }
 
@@ -102,8 +101,7 @@ where
 {
     
 
-    pub fn new(channels: Vec<Sender<Msg>>, 
-               router_type: RouterType) -> Result<Self, Status> {
+    pub fn new(channels: Vec<Sender<Msg>>) -> Result<Self, Status> {
 
         // Check channels to not be repetive
         if let Err(_) = Router::list_check(&channels) {
@@ -113,7 +111,7 @@ where
         Ok(Router { 
             c: 0, 
             channels,
-            router_type
+            router_type: RouterType::Broadcast
         })
     }
 
@@ -170,15 +168,8 @@ where
             return Ok(())
         }
 
-        match self.router_type {
-            RouterType::RoundRobin => {
-                return self.roundrobin(msg).await
-            }
-            RouterType::Broadcast => {
-                self.broadcast(msg).await;
-                Ok(())   
-            }
-        }
+        self.broadcast(msg).await;
+        Ok(()) 
     }
 
     
@@ -191,105 +182,6 @@ where
 
         let _ = self.channels[self.channels.len() - 1].send(msg).await;
 
-    }
-
-
-    /// send msg to next destination
-    /// 
-    /// roundrobin is safe if a destination terminate
-    /// auto detect it and remove from channels 
-    #[inline]
-    async fn roundrobin(&mut self, mut msg: Msg) -> Result<(), DestinationDown<Msg>> {
-        let mut reason = Ok(());
-        
-
-        // ------------------------------------------
-        //
-        //  almost always a destination must never 
-        //   closed unless want shutdown destination 
-        // 
-        //     with this imagine, almost always
-        //     this fn done with First try
-        //
-        //     so tried to prevent loop instruction
-        //
-        // ------------------------------------------
-
-
-
-
-        // --------------First Try--------------------
-
-        // get next index
-        let mut index = self.next_index();
-
-        // send msg 
-        match self.channels[index].send(msg).await {
-            
-            // sending was successful 
-            Ok(_ok) => {
-
-                // return Ok() 
-                return reason
-            }
-            
-            // channel closed
-            Err(err) => {
-
-                // take ownership of msg
-                msg = err.0;
-
-                // remove this sender from channels
-                self.channels.remove(index);
-                
-                // if not exist destination return Err
-                if self.channels.len() == 0 {
-
-                    reason = Err(DestinationDown(msg));
-                    return reason
-                }
-            }
-        }
-        
-        
-        // when First try fail then 
-        //  it run a loop for other destination try 
-        //
-        // -------------- Loop Try --------------------
-        
-        loop {
-            // get next index
-            index = self.next_index();
-
-            // send msg 
-            match self.channels[index].send(msg).await {
-                
-                // sending was successful 
-                Ok(_ok) => {
-
-                    // return Ok() 
-                    return reason
-                }
-                
-                // channel closed
-                Err(err) => {
-
-                    // take ownership of msg
-                    msg = err.0;
-
-                    // remove this sender from channels
-                    self.channels.remove(index);
-                    
-                    
-                    // if not exist destination return Err
-                    if self.channels.len() == 0 {
-
-                        reason = Err(DestinationDown(msg));
-                        return reason
-                    }
-                }
-            }
-        }
     }
 
 
@@ -359,13 +251,6 @@ where
         }
     }
 
-    /// create new session
-    pub fn clone(&self) -> Self {
-        let sender = self.sender.clone();
-        Session { 
-            sender 
-        }
-    }
 
     /// register new channel to router
     pub async fn register(&self, sender: Sender<Msg>) -> Result<(), SessionResult> {

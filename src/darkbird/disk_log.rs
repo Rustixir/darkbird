@@ -470,13 +470,7 @@ impl Session {
         }
     }
 
-    /// create new session
-    pub fn clone(&self) -> Self {
-        let sender = self.sender.clone();
-        Session { 
-            sender 
-        }
-    }
+
 
     /// checkin a resource
     pub async fn log(&self, record: Vec<u8>) -> Result<(), SessionResult> {
