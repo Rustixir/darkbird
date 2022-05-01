@@ -8,7 +8,7 @@ use std::hash::Hash;
 
 use dashmap::{DashMap, iter::Iter};
 
-use super::{disk_log::{DiskLog, Session}, router::{Router, RouterType, self}, StatusResult, Options, StorageType};
+use super::{disk_log::{DiskLog, Session}, router::{Router, self}, StatusResult, Options, StorageType};
 
 use crate::darkbird::SessionResult;
 
@@ -44,7 +44,7 @@ where
     
                     // Run Reporter
                     let reporter = 
-                            Router::<Event<Key, Document>>::new(vec![], RouterType::Broadcast)
+                            Router::<Event<Key, Document>>::new(vec![])
                             .unwrap()
                             .run_service();
     
@@ -69,7 +69,7 @@ where
             
             // Run Reporter
             let reporter = 
-                    Router::<Event<Key, Document>>::new(vec![], RouterType::Broadcast)
+                    Router::<Event<Key, Document>>::new(vec![])
                     .unwrap()
                     .run_service();
             // Create Storage
