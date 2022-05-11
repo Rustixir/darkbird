@@ -1,7 +1,7 @@
 #[tokio::main]
 async fn main() {
 
-    // path must be fill path for migration::run
+    // path must be full path for migration::run
     let path           = "/home/ai/Documents/Rust/blackbird";
 
     let storage_name   = "blackbird";
