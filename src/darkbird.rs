@@ -8,6 +8,7 @@ mod router;
 
 pub mod storage;
 pub mod migration;
+pub mod persistent_worker;
 
 
 pub static TIMEOUT: Duration = Duration::from_secs(5);
