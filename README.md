@@ -47,8 +47,8 @@ The darkbird provides the following:
   this module should be use before storage opened
 
 
-* **Perist to database** - Persistent, copy whole storage to database (postgres/cassandra/scylla) 
-  when need migrate to another infrasture or machine can use this plugin to copy whole data
+* **Persist to database** - Persistent, copy whole storage to database (postgres/cassandra scylla) 
+  this feature used for migrate to another infrastructure or machine can use this feature to copy whole data
   to another destination and load from that 
 
 
