@@ -6,6 +6,8 @@ use simple_wal::LogError;
 mod disk_log;
 mod router;
 
+pub use async_trait::async_trait;
+
 pub mod storage;
 pub mod migration;
 pub mod persistent_worker;

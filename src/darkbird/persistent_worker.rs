@@ -1,15 +1,25 @@
 
 
 
-use std::{hash::Hash, pin::Pin, future::Future};
+use std::{hash::Hash, sync::Arc};
 
+use async_trait::async_trait;
 use scylla::{Session, SessionBuilder, transport::errors::NewSessionError};
 
 
 use serde::{Serialize, de::DeserializeOwned};
-use tokio_postgres::{NoTls, Error, Client};
+use tokio_postgres::{NoTls, Client, Error};
 
 use crate::Storage;
+
+
+pub struct Stop;
+
+
+#[async_trait]
+pub trait Handler<Key, Document, Response> {
+    async fn handle(&self, session: &DatabaseSession, key: &Key, document: &Document) -> Result<(), Stop>;
+}
 
 
 pub enum DatabaseName {
@@ -96,20 +106,24 @@ impl Persistent {
 
 
 
-    pub async fn copy_memtable_to_database<'a, Key, Document>
+    pub async fn copy_memtable_to_database<'a, Key, Document, THandler>
            (&self, 
-            storage: Storage<Key, Document>,
-            handler: fn(&DatabaseSession, &Key, &Document) -> Pin<Box<dyn Future<Output=()> + 'a>>) 
+            storage: Arc<Storage<Key, Document>>,
+            handler: THandler) 
 
     where
-        Key: Clone + Serialize + DeserializeOwned + Eq + Hash + Send + 'static,
-        Document: Clone + Serialize + DeserializeOwned + Eq + Hash + Send + 'static
+        Key      : Clone + Serialize + DeserializeOwned + Eq + Hash + Send + 'static,
+        Document : Clone + Serialize + DeserializeOwned + Eq + Hash + Send + 'static,
+        THandler : Handler<Key, Document, ()>
     {     
         for refi in storage.iter() {
             let key = refi.key();
             let document = refi.value();
 
-            handler(&self.db_session, key, document).await;
+            if let Err(Stop) = handler.handle(&self.db_session, key, document).await {
+                println!("Stop copying ....");
+                return
+            }
         }                
     }
 
