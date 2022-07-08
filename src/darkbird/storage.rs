@@ -92,7 +92,7 @@ where
     }
 
     
-    pub fn off_reporter(&self) {
+    pub fn off_reporter(&mut self) {
         self.off_reporter = true;
     }
 

@@ -12,18 +12,21 @@ use tokio_postgres::{NoTls, Client, Error};
 
 use crate::Storage;
 
+use super::SessionResult;
+
 
 pub struct Stop;
 
 
 #[async_trait]
 pub trait Setter<Key, Document> {
-    async fn handle(&self, session: &DatabaseSession, key: &Key, document: &Document) -> Result<(), Stop>;
+    async fn init(&self, session: &DatabaseSession);
+    async fn handle_setter(&self, session: &DatabaseSession, key: &Key, document: &Document) -> Result<(), Stop>;
 }
 
 #[async_trait]
 pub trait Getter<Key, Document> {
-    async fn handle(&self, session: &DatabaseSession) -> Result<(Key, Document), Stop>;
+    async fn handle_getter(&self, session: &DatabaseSession) -> Vec<(Key, Document)>;
 }
 
 
@@ -114,7 +117,7 @@ impl Persistent {
     pub async fn copy_memtable_to_database<Key, Document, THandler>
            (&self, 
             storage: Arc<Storage<Key, Document>>,
-            handler: THandler) 
+            handler: &THandler) 
 
     where
         Key      : Clone + Serialize + DeserializeOwned + Eq + Hash + Send + 'static,
@@ -125,34 +128,36 @@ impl Persistent {
             let key = refi.key();
             let document = refi.value();
 
-            if let Err(Stop) = handler.handle(&self.db_session, key, document).await {
+            if let Err(Stop) = handler.handle_setter(&self.db_session, key, document).await {
                 println!("Stop copying ....");
                 return
             }
         }                
     }
 
+
+
     pub async fn load_memtable_from_database<Key, Document, THandler>
             (&self,
              storage: Arc<Storage<Key, Document>>,
-             handler: THandler) 
+             handler: &THandler) -> Result<(), SessionResult>
     
     where
         Key      : Clone + Serialize + DeserializeOwned + Eq + Hash + Send + 'static,
         Document : Clone + Serialize + DeserializeOwned + Eq + Hash + Send + 'static,
-        THandler : Getter<Key, Document>         
+        THandler : Getter<Key, Document>       
     {
-        loop {
-            match handler.handle(&self.db_session).await {
-                Ok((key, document)) => {
-                    storage.insert(key, document).await;
-                }
-                Err(_stop) => {
-                    return
-                }
+        // Call Getter
+        let list = handler.handle_getter(&self.db_session).await;
+
+        // Fill Memtable
+        for (key, document) in list.into_iter() {
+            if let Err(e) = storage.insert(key, document).await {
+                return Err(e)
             }
         }
 
+        return Ok(())
     }
 }
 

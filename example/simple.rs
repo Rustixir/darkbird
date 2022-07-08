@@ -32,7 +32,7 @@ async fn main() {
     // when calling storage::open, it load whole storage from disk
     //
     
-    let s = Storage::<Pid, User>::open(ops).await.unwrap();
+    let s1 = Storage::<Pid, User>::open(ops).await.unwrap();
     
     
     

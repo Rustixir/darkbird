@@ -21,6 +21,7 @@ pub use storage::{Event, RQuery};
 
 
 
+#[allow(dead_code)]
 #[derive(Debug)]
 pub enum Status {
     SenderNotFound,
@@ -34,7 +35,7 @@ pub enum StatusResult {
     IoError(Error),
     End,
     ReporterIsOff,
-    Err(String)
+    Err(String),
 }
 
 
@@ -48,7 +49,7 @@ pub enum SessionResult {
 }
 
 
-
+#[allow(dead_code)]
 pub enum WorkerState {
     Continue,
     Disconnected,
@@ -72,7 +73,6 @@ pub struct Options<'a> {
     path: &'a str, 
     storage_name: &'a str, 
     total_page_size: usize,
-
     stype: StorageType
 }
 
