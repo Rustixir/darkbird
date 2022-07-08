@@ -33,7 +33,7 @@ pub enum StatusResult {
     LogErr(LogError),
     IoError(Error),
     End,
-
+    ReporterIsOff,
     Err(String)
 }
 
@@ -59,8 +59,13 @@ pub enum WorkerState {
 
 
 pub enum StorageType {
-    RamCopies,
-    DiskCopies
+     
+    // Store to memory 
+    RamCopies, 
+    
+    // Store to memory and persist to disk
+    DiskCopies,
+
 }
 
 pub struct Options<'a> {

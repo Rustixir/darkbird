@@ -17,8 +17,13 @@ pub struct Stop;
 
 
 #[async_trait]
-pub trait Handler<Key, Document, Response> {
+pub trait Setter<Key, Document> {
     async fn handle(&self, session: &DatabaseSession, key: &Key, document: &Document) -> Result<(), Stop>;
+}
+
+#[async_trait]
+pub trait Getter<Key, Document> {
+    async fn handle(&self, session: &DatabaseSession) -> Result<(Key, Document), Stop>;
 }
 
 
@@ -106,7 +111,7 @@ impl Persistent {
 
 
 
-    pub async fn copy_memtable_to_database<'a, Key, Document, THandler>
+    pub async fn copy_memtable_to_database<Key, Document, THandler>
            (&self, 
             storage: Arc<Storage<Key, Document>>,
             handler: THandler) 
@@ -114,7 +119,7 @@ impl Persistent {
     where
         Key      : Clone + Serialize + DeserializeOwned + Eq + Hash + Send + 'static,
         Document : Clone + Serialize + DeserializeOwned + Eq + Hash + Send + 'static,
-        THandler : Handler<Key, Document, ()>
+        THandler : Setter<Key, Document>
     {     
         for refi in storage.iter() {
             let key = refi.key();
@@ -127,5 +132,27 @@ impl Persistent {
         }                
     }
 
+    pub async fn load_memtable_from_database<Key, Document, THandler>
+            (&self,
+             storage: Arc<Storage<Key, Document>>,
+             handler: THandler) 
+    
+    where
+        Key      : Clone + Serialize + DeserializeOwned + Eq + Hash + Send + 'static,
+        Document : Clone + Serialize + DeserializeOwned + Eq + Hash + Send + 'static,
+        THandler : Getter<Key, Document>         
+    {
+        loop {
+            match handler.handle(&self.db_session).await {
+                Ok((key, document)) => {
+                    storage.insert(key, document).await;
+                }
+                Err(_stop) => {
+                    return
+                }
+            }
+        }
+
+    }
 }
 

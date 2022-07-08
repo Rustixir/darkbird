@@ -13,7 +13,6 @@ use super::{disk_log::{DiskLog, Session}, router::{Router, self}, StatusResult, 
 use crate::darkbird::SessionResult;
 
 
-
 pub struct Storage<Key, Document> {
     
     // DashMap
@@ -23,7 +22,10 @@ pub struct Storage<Key, Document> {
     wal_session: Option<Session>,
 
     // Reporter session 
-    reporter_session: router::Session<Event<Key, Document>>
+    reporter_session: router::Session<Event<Key, Document>>,
+
+    off_reporter: bool
+    
 }
 
 impl<Key: 'static, Document: 'static> Storage<Key, Document> 
@@ -53,7 +55,8 @@ where
                     let st = Storage { 
                         engine: DashMap::new(),
                         wal_session: Some(wal_session),
-                        reporter_session: reporter
+                        reporter_session: reporter,
+                        off_reporter: false
                     };
     
                     // load from disk
@@ -76,7 +79,8 @@ where
             let st = Storage { 
                 engine: DashMap::new(),
                 wal_session: None,
-                reporter_session: reporter
+                reporter_session: reporter,
+                off_reporter: false
             };
             
             // loader off
@@ -87,10 +91,18 @@ where
 
     }
 
+    
+    pub fn off_reporter(&self) {
+        self.off_reporter = true;
+    }
 
     /// subscribe to Reporter
     pub async fn subscribe(&self, sender: Sender<Event<Key, Document>>) -> Result<(), SessionResult>{
-                
+        
+        if self.off_reporter {
+            return Err(SessionResult::Err(StatusResult::ReporterIsOff))
+        }
+        
         // Send to Reporter        
         let _ = self.reporter_session.dispatch(Event::Subscribed(sender.clone())).await;
         
@@ -100,32 +112,43 @@ where
 
     /// insert to storage and persist to disk
     pub async fn insert(&self, key: Key, doc: Document) -> Result<(), SessionResult>{
-        
-        let query = RQuery::Insert(key.clone(), doc.clone());
-
+                
         match &self.wal_session {
             Some(wal) => {
+
+                let query = RQuery::Insert(key.clone(), doc.clone());
+
                 match wal.log(bincode::serialize(&query).unwrap()).await {
                     Err(e) => Err(e),
                     Ok(_) => {
         
+                        // if Reporter is on
+                        if !self.off_reporter {
+                            // Send to Reporter
+                            let _ = self.reporter_session.dispatch(Event::Query(query)).await;
+                        }
+        
                         // Insert to memory
                         self.engine.insert(key, doc);
-        
-                        // Send to Reporter
-                        let _ = self.reporter_session.dispatch(Event::Query(query)).await;
-        
+
                         Ok(())
                     }
                 } 
             }
             None => {
 
+                // if Reporter is on
+                if !self.off_reporter {
+
+                    let query = RQuery::Insert(key.clone(), doc.clone());
+                    
+                    // Send to Reporter
+                    let _ = self.reporter_session.dispatch(Event::Query(query)).await;
+                }
+
+
                 // Insert to memory
                 self.engine.insert(key, doc);
-    
-                // Send to Reporter
-                let _ = self.reporter_session.dispatch(Event::Query(query)).await;
 
                 Ok(())
             }
@@ -134,12 +157,11 @@ where
 
 
     /// remove from storage and persist to disk
-    pub async fn remove(&self, key: Key) -> Result<(), SessionResult>{
+    pub async fn remove(&self, key: Key) -> Result<(), SessionResult> {
+
         self.engine.remove(&key);
 
         let query = RQuery::<Key, Document>::Remove(key);
-
-        // Send to Reporter
 
         match &self.wal_session {
             Some(wal) => {
@@ -148,8 +170,11 @@ where
                 match wal.log(bincode::serialize(&query).unwrap()).await {
                     Ok(_) => {
         
-                        // Send to Reporter
-                        let _ = self.reporter_session.dispatch(Event::Query(query)).await;
+                        // if Reporter is on
+                        if !self.off_reporter {
+                            // Send to Reporter
+                            let _ = self.reporter_session.dispatch(Event::Query(query)).await;
+                        }
         
                         Ok(())
                     }
@@ -158,8 +183,11 @@ where
             }
             None => {
                 
-                // Send to Reporter
-                let _ = self.reporter_session.dispatch(Event::Query(query)).await;
+                // if Reporter is on
+                if !self.off_reporter {
+                    // Send to Reporter
+                    let _ = self.reporter_session.dispatch(Event::Query(query)).await;
+                }
         
                 Ok(())
 
@@ -198,14 +226,14 @@ where
             // Get Page
             let mut logfile = match wal.get_page(page_index).await {
                 Ok(lf) => lf,
-                Err(e) => {
-                    if let SessionResult::Err(er) = e {
-                        match er {
+                Err(sess_res) => {
+                    if let SessionResult::Err(status_res) = sess_res {
+                        match status_res {
                             StatusResult::LogErr(e) => eprintln!("==> {:?}", e),
                             StatusResult::IoError(e) => eprintln!("==> {:?}", e),
                             StatusResult::Err(e) => eprintln!("==> {:?}", e),
 
-                            StatusResult::End => {}
+                            StatusResult::End | StatusResult::ReporterIsOff => {}
                         }  
                     } 
 
