@@ -37,6 +37,7 @@ async fn main() {
     let pers = Persistent::connect(DatabaseName::Postgres, cfg_string).await.unwrap();
     let h = Handler;
 
+    h.init().await;
 
     // Copy table to postgres
     pers.copy_memtable_to_database(s1, &h).await;
