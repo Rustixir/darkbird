@@ -61,13 +61,8 @@ impl Setter<Pid, User> for Handler {
         if let DatabaseSession::Postgres(client) = session {
             // Query: Insert to Table
             //
-            // if finish {
-            //      return Err(Stop)
-            // }
-            //
-            // else {
-            //      return Ok(())
-            // }
+            // return Ok(())
+            
         }
     } 
 } 
