@@ -47,7 +47,7 @@ The darkbird provides the following:
   this module should be use before storage opened
 
 
-* **Persist to database** - Persistent, copy whole storage to database (postgres/cassandra scylla) 
+* **Persist to database** - copy memtable to (postgres/cassandra scylla) 
   and load from that 
 
 
@@ -56,6 +56,12 @@ The darkbird provides the following:
   get storage event (```RQuery<Key, Document>, Subscribed(tokio::mpsc::Sender(Event<key, document>))```)
  
 
+
+## Vsn 2.0.0
+
+*  **Improve Performance** 
+
+*  **Persistent** Copy MemTable to Database and load from that 
 
 Examples
 =============
