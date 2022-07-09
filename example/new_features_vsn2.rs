@@ -33,6 +33,13 @@ async fn main() {
 
 
     // **** New Feature vsn-2 ****
+    //
+    //  Note:     
+    //     Persistent Getter and Setter is complete safe, 
+    //     can run Insert/Remove/Lookup on storage also 
+    //     concurrently call (copy_memtable_to_database) and (load_memtable_from_database) in that 
+    //
+    //
     let cfg_string = "host=localhost user=postgres".to_string();
     let pers = Persistent::connect(DatabaseName::Postgres, cfg_string).await.unwrap();
     let h = Handler;
