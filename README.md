@@ -47,7 +47,7 @@ The darkbird provides the following:
   this module should be use before storage opened
 
 
-* **Persist to database** - copy memtable to (postgres/cassandra scylla) 
+* **Persist to database** - copy whole date to (postgres/cassandra/scylla) 
   and load from that 
 
 
