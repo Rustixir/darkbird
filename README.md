@@ -61,7 +61,7 @@ The darkbird provides the following:
 
 *  **Improve Performance** 
 
-*  **Persistent** Copy MemTable to Database and load from that 
+*  **Persistent** Copy whole data to Database and load from that 
 
 Examples
 =============
