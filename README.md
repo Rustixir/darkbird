@@ -20,14 +20,14 @@ also persist data to disk to avoid loss any data**
 
 The darkbird provides the following:
 
-* **Persistent** - use **Non-Blocking** wal engine for persist data, 
-  also store data to multiple pages by total_page_size
+* **Persistent** - use **Non-Blocking** write-ahead-logging engine for persistency data, 
+  also store data to multiple pages with total_page_size
   
 
 
 * **In-memory** - whole data stored in-memory 
   with two mode ( **DiskCopies** , **RamCopies** )
-  both stored in-memory but DiskCopies persist data to disk and
+  both stored in-memory but DiskCopies persistent data to disk and
   after restart, darkbird **load whole data to memory**
 
 
