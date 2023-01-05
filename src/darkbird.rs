@@ -3,8 +3,10 @@
 use std::{io::Error, time::Duration};
 use simple_wal::LogError;
 
+
 mod disk_log;
 mod router;
+pub mod indexer;
 
 pub use async_trait::async_trait;
 

@@ -6,17 +6,20 @@ use simple_wal::LogError;
 use tokio::sync::mpsc::Sender;
 use std::hash::Hash;
 
-use dashmap::{DashMap, iter::Iter};
+use dashmap::{DashMap, iter::Iter, mapref::one::Ref};
 
-use super::{disk_log::{DiskLog, Session}, router::{Router, self}, StatusResult, Options, StorageType};
+use super::{disk_log::{DiskLog, Session}, router::{Router, self}, StatusResult, Options, StorageType, indexer::Indexer};
 
 use crate::darkbird::SessionResult;
 
 
-pub struct Storage<Key, Document> {
+pub struct Storage<Key, Document: Indexer> {
     
     // DashMap
     engine: DashMap<Key, Document>,
+
+    // Index
+    index: DashMap<String, Key>,
 
     // Wal session
     wal_session: Option<Session>,
@@ -31,7 +34,7 @@ pub struct Storage<Key, Document> {
 impl<Key: 'static, Document: 'static> Storage<Key, Document> 
 where    
     Key: Serialize + DeserializeOwned + Eq + Hash + Clone + Send,
-    Document: Serialize + DeserializeOwned + Clone + Send
+    Document: Serialize + DeserializeOwned + Clone + Send + Indexer
 {
     
     pub async fn open<'a>(ops: Options<'a>) -> Result<Self, LogError> {
@@ -54,9 +57,10 @@ where
                     // Create Storage
                     let st = Storage { 
                         engine: DashMap::new(),
+                        index: DashMap::new(),
                         wal_session: Some(wal_session),
                         reporter_session: reporter,
-                        off_reporter: false
+                        off_reporter: false,
                     };
     
                     // load from disk
@@ -69,18 +73,22 @@ where
         } else {
             
             // Off DiskLog 
+
             
             // Run Reporter
             let reporter = 
                     Router::<Event<Key, Document>>::new(vec![])
                     .unwrap()
                     .run_service();
+
+
             // Create Storage
             let st = Storage { 
                 engine: DashMap::new(),
+                index: DashMap::new(),
                 wal_session: None,
                 reporter_session: reporter,
-                off_reporter: false
+                off_reporter: false,
             };
             
             // loader off
@@ -111,8 +119,8 @@ where
 
 
     /// insert to storage and persist to disk
-    pub async fn insert(&self, key: Key, doc: Document) -> Result<(), SessionResult>{
-                
+    pub async fn insert(&self, key: Key, doc: Document) -> Result<(), SessionResult> {
+        
         match &self.wal_session {
             Some(wal) => {
 
@@ -128,8 +136,18 @@ where
                             let _ = self.reporter_session.dispatch(Event::Query(query)).await;
                         }
         
+
+                        // Insert to indexes                        
+                        doc
+                            .extract()
+                            .into_iter()
+                            .for_each(|index_key| {
+                                self.index.insert(index_key, key.clone());
+                            });
+
                         // Insert to memory
                         self.engine.insert(key, doc);
+                        
 
                         Ok(())
                     }
@@ -140,11 +158,22 @@ where
                 // if Reporter is on
                 if !self.off_reporter {
 
+                    // Insert to memory
                     let query = RQuery::Insert(key.clone(), doc.clone());
                     
                     // Send to Reporter
                     let _ = self.reporter_session.dispatch(Event::Query(query)).await;
                 }
+
+
+                // Insert to indexes                        
+                doc
+                    .extract()
+                    .into_iter()
+                    .for_each(|index_key| {
+                        self.index.insert(index_key, key.clone());
+                    });
+            
 
 
                 // Insert to memory
@@ -158,6 +187,21 @@ where
 
     /// remove from storage and persist to disk
     pub async fn remove(&self, key: Key) -> Result<(), SessionResult> {
+
+
+        match self.engine.get(&key) {
+            Some(doc) => {                
+                doc
+                    .value()
+                    .extract()
+                    .iter()
+                    .for_each(|key| {
+                        self.index.remove(key);
+                    });            
+            }
+            None => return Ok(()),
+        }
+
 
         self.engine.remove(&key);
 
@@ -196,13 +240,35 @@ where
     }
 
 
+    /// gets documents  
+    pub fn gets(&self, list: Vec<&Key>) -> Vec<Ref<Key, Document>> {
+        let mut result = Vec::with_capacity(list.len());
+        
+        list
+          .iter()
+          .for_each(|key| {
+              if let Some(r) = self.engine.get(key) {
+                result.push(r);
+              } 
+          });
+          
+        result
+    }
+
+
     /// lookup by key
-    pub fn lookup(&self, key: &Key) -> Option<Document> {
-        match self.engine.get(key) {
-            None => None,
+    pub fn lookup(&self, key: &Key) -> Option<Ref<Key, Document>> {
+        return self.engine.get(key)
+    }
+
+
+    /// lookup by index
+    pub fn lookup_by_index(&self, index_key: &String) -> Option<Ref<Key, Document>> {
+        match self.index.get(index_key) {
             Some(r) => {
-                Some(r.clone())
+                return self.engine.get(&r.value())
             }
+            None => None,
         }
     }
 
@@ -211,6 +277,13 @@ where
     pub fn iter(&self) -> Iter<'_, Key, Document> {
         self.engine.iter()
     }
+
+
+    /// return Iter (Safe for mutation)
+    pub fn iter_index(&self) -> Iter<'_, String, Key> {
+        self.index.iter()
+    }
+
 
 
     /// load storage from disk
@@ -232,8 +305,7 @@ where
                             StatusResult::LogErr(e) => eprintln!("==> {:?}", e),
                             StatusResult::IoError(e) => eprintln!("==> {:?}", e),
                             StatusResult::Err(e) => eprintln!("==> {:?}", e),
-
-                            StatusResult::End | StatusResult::ReporterIsOff => {}
+                            _ => {}
                         }  
                     } 
 
@@ -258,11 +330,27 @@ where
                 match query {
                     RQuery::Insert(key, doc) => {
 
+                        doc
+                        .extract()
+                        .into_iter()
+                        .for_each(|index_key| {
+                            self.index.insert(index_key, key.clone());
+                        });
+
                         // use engine insert to avoid rewrite to log after insert
                         self.engine.insert(key, doc);                                                    
                     }
                     RQuery::Remove(key) => {
-                        self.engine.remove(&key);
+                        if let Some(r) = self.engine.get(&key) {
+                            r.value()
+                            .extract()
+                            .iter()
+                            .for_each(|index_key| {
+                                self.index.remove(index_key);
+                            });
+
+                            self.engine.remove(&key);
+                        } 
                     }
                 }
             }

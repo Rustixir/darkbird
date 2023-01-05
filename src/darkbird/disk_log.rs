@@ -234,6 +234,7 @@ impl Context {
                 table_name: &str, 
                 mut total_page_size: usize) -> Result<Self, LogError> 
     {
+
         // at-least DEFAULT_PAGE_SIZE Record
         total_page_size =  if total_page_size < DEFAULT_PAGE_SIZE { DEFAULT_PAGE_SIZE } else { total_page_size };
         

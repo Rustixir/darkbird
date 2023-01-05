@@ -10,7 +10,7 @@ use scylla::{Session, SessionBuilder, transport::errors::NewSessionError};
 use serde::{Serialize, de::DeserializeOwned};
 use tokio_postgres::{NoTls, Client, Error};
 
-use crate::Storage;
+use crate::{Storage, Indexer};
 
 use super::SessionResult;
 
@@ -121,7 +121,7 @@ impl Persistent {
 
     where
         Key      : Clone + Serialize + DeserializeOwned + Eq + Hash + Send + 'static,
-        Document : Clone + Serialize + DeserializeOwned + Eq + Hash + Send + 'static,
+        Document : Clone + Serialize + DeserializeOwned + Indexer + Eq + Hash + Send + 'static,
         THandler : Setter<Key, Document>
     {     
         for refi in storage.iter() {
@@ -144,7 +144,7 @@ impl Persistent {
     
     where
         Key      : Clone + Serialize + DeserializeOwned + Eq + Hash + Send + 'static,
-        Document : Clone + Serialize + DeserializeOwned + Eq + Hash + Send + 'static,
+        Document : Clone + Serialize + DeserializeOwned + Indexer + Eq + Hash + Send + 'static,
         THandler : Getter<Key, Document>       
     {
         // Call Getter

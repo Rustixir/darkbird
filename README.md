@@ -38,10 +38,13 @@ The darkbird provides the following:
   storage is complete safe to shared between thread**
 
 
+* **Indexing**  - darkbird support indexing even dynamically
+  can decision about which fields in document be index
+  to find that document very fast
 
 
 
-* **Migration** - Darkbird storage model is (Key, Document)
+* **Migration** - darkbird storage model is (Key, Document)
   if you want change Document Model, can use `migration::run` 
   for **change all (Key, Document) already exist in disk**
   this module should be use before storage opened
@@ -62,6 +65,14 @@ The darkbird provides the following:
 *  **Improve Performance** 
 
 *  **Persistent** Copy whole data to Database and load from that 
+
+
+
+## Vsn 2.5.0
+
+*  **Indexing** 
+
+
 
 Examples
 =============
