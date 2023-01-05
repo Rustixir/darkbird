@@ -30,7 +30,7 @@ async fn main() {
 
     println!("==> {:?}", res1.value());
 
-    let is_same_doc = (res1.value() == res2.value()) == (res2.value() == res3.value());
+    let is_same_doc = (res1.value() == res2.value()) && (res2.value() == res3.value());
     if is_same_doc {
         println!("they are same Document")
     }
