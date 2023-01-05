@@ -28,7 +28,7 @@ async fn main() {
     let res2 = storage.lookup_by_index(&"652398".to_owned()).unwrap();
     let res3 = storage.lookup_by_index(&"09370156893".to_owned()).unwrap();
 
-    println!("==> {:?}", res1.value());
+    
 
     let is_same_doc = (res1.value() == res2.value()) && (res2.value() == res3.value());
     if is_same_doc {
