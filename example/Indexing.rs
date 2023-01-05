@@ -20,7 +20,7 @@ async fn main() {
         phone: "09370156893".to_string(),
     };
 
-    // storage.insert(id, u).await.unwrap();
+    storage.insert(id, u).await.unwrap();
 
     
 
