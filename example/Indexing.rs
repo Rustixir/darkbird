@@ -48,7 +48,7 @@ struct User {
 }
 
 impl Indexer for User {
-    // thisd example index over all fields
+    // this example index over all fields
     fn extract(&self) -> Vec<String> {
         vec![
             self.user.clone(),
