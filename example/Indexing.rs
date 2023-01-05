@@ -13,12 +13,12 @@ async fn main() {
     let storage = Storage::<Pid, User>::open(ops).await.unwrap();
 
 
-    // let id = "1234567".to_string();
-    // let u = User {
-        // user: "Danyalmhai".to_string(),
-        // pass: "652398".to_string(),
-        // phone: "09370156893".to_string(),
-    // };
+    let id = "1234567".to_string();
+    let u = User {
+        user: "Danyalmhai".to_string(),
+        pass: "652398".to_string(),
+        phone: "09370156893".to_string(),
+    };
 
     // storage.insert(id, u).await.unwrap();
 
