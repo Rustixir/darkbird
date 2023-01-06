@@ -63,3 +63,47 @@ impl User2 {
         User2 { fullname, age }
     } 
 }
+
+
+impl document::Document for User {}
+
+
+impl document::Indexer for User {
+    fn extract(&self) -> Vec<String> {
+        vec![]
+    }
+}
+
+impl document::Tags for User {
+    fn get_tags(&self) -> Vec<String> {
+        vec![]
+    }
+}
+
+impl document::Range for User {
+    fn get_fields(&self) -> Vec<RangeField> {
+        None
+    }
+}
+
+
+impl document::Document for User2 {}
+
+
+impl document::Indexer for User2 {
+    fn extract(&self) -> Vec<String> {
+        vec![]
+    }
+}
+
+impl document::Tags for User2 {
+    fn get_tags(&self) -> Vec<String> {
+        vec![]
+    }
+}
+
+impl document::Range for User2 {
+    fn get_fields(&self) -> Vec<RangeField> {
+        None
+    }
+}

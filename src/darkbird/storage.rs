@@ -1,301 +1,334 @@
 
-use serde::Serialize;
-use serde::de::DeserializeOwned;
-use serde_derive::{Serialize, Deserialize};
+use serde::{de::DeserializeOwned, Serialize};
+use serde_derive::{Deserialize, Serialize};
 use simple_wal::LogError;
-use tokio::sync::mpsc::Sender;
 use std::hash::Hash;
+use tokio::sync::mpsc::Sender;
 
-use dashmap::{DashMap, iter::Iter, mapref::one::Ref};
-
-use super::{disk_log::{DiskLog, Session}, router::{Router, self}, StatusResult, Options, StorageType, indexer::Indexer};
-
-use crate::darkbird::SessionResult;
+use dashmap::{iter::Iter, mapref::one::Ref, DashMap, DashSet};
 
 
-pub struct Storage<Key, Document: Indexer> {
-    
+use super::{
+    disk_log::{DiskLog, Session},
+    index::{hash::HashIndex, range::RangeIndex, tags::TagIndex},
+    router::{self, Router},
+    Options, StatusResult, StorageType,
+};
+
+use crate::{darkbird::SessionResult, document::Document};
+
+pub struct Storage<K, Doc: Document> {
     // DashMap
-    engine: DashMap<Key, Document>,
+    collection: DashMap<K, Doc>,
 
-    // Index
-    index: DashMap<String, Key>,
+    // HashIndex
+    hash_index: HashIndex<K>,
+
+    // TagIndex
+    tag_index: TagIndex<K>,
+
+    // RangeIndex
+    range_index: RangeIndex<K>,
 
     // Wal session
     wal_session: Option<Session>,
 
-    // Reporter session 
-    reporter_session: router::Session<Event<Key, Document>>,
+    // Reporter session
+    reporter_session: router::Session<Event<K, Doc>>,
 
-    off_reporter: bool
-    
+    off_reporter: bool,
 }
 
-impl<Key: 'static, Document: 'static> Storage<Key, Document> 
-where    
-    Key: Serialize + DeserializeOwned + Eq + Hash + Clone + Send,
-    Document: Serialize + DeserializeOwned + Clone + Send + Indexer
+impl<K, Doc> Storage<K, Doc>
+where
+    Doc: Serialize + DeserializeOwned + Clone + Send + 'static + Document,
+    K: Serialize
+        + DeserializeOwned
+        + PartialOrd
+        + Ord
+        + PartialEq
+        + Eq
+        + Hash
+        + Clone
+        + Send
+        + 'static,
 {
-    
     pub async fn open<'a>(ops: Options<'a>) -> Result<Self, LogError> {
-            
         if let StorageType::DiskCopies = ops.stype {
             match DiskLog::open(ops.path, ops.storage_name, ops.total_page_size) {
                 Err(e) => return Err(e),
                 Ok(disklog) => {
-    
-                    // Run DiskLog 
+                    // Run DiskLog
                     let wal_session = disklog.run_service();
-    
+
                     // Run Reporter
-                    let reporter = 
-                            Router::<Event<Key, Document>>::new(vec![])
-                            .unwrap()
-                            .run_service();
-    
-    
+                    let reporter = Router::<Event<K, Doc>>::new(vec![]).unwrap().run_service();
+
                     // Create Storage
-                    let st = Storage { 
-                        engine: DashMap::new(),
-                        index: DashMap::new(),
+                    let st = Storage {
+                        collection: DashMap::new(),
+                        hash_index: HashIndex::new(),
+                        tag_index: TagIndex::new(),
+                        range_index: RangeIndex::new(),
                         wal_session: Some(wal_session),
                         reporter_session: reporter,
                         off_reporter: false,
                     };
-    
+
                     // load from disk
-                    st.loader().await;                
-    
-                    return Ok(st)
+                    st.loader().await;
+
+                    return Ok(st);
                 }
-            }  
-
+            }
         } else {
-            
-            // Off DiskLog 
+            // Off DiskLog
 
-            
             // Run Reporter
-            let reporter = 
-                    Router::<Event<Key, Document>>::new(vec![])
-                    .unwrap()
-                    .run_service();
-
+            let reporter = Router::<Event<K, Doc>>::new(vec![]).unwrap().run_service();
 
             // Create Storage
-            let st = Storage { 
-                engine: DashMap::new(),
-                index: DashMap::new(),
+            let st = Storage {
+                collection: DashMap::new(),
+                hash_index: HashIndex::new(),
+                tag_index: TagIndex::new(),
+                range_index: RangeIndex::new(),
                 wal_session: None,
                 reporter_session: reporter,
                 off_reporter: false,
             };
-            
+
             // loader off
-                        
-            return Ok(st)
 
+            return Ok(st);
         }
-
     }
 
-    
+    #[inline]
     pub fn off_reporter(&mut self) {
         self.off_reporter = true;
     }
 
     /// subscribe to Reporter
-    pub async fn subscribe(&self, sender: Sender<Event<Key, Document>>) -> Result<(), SessionResult>{
-        
+    #[inline]
+    pub async fn subscribe(&self, sender: Sender<Event<K, Doc>>) -> Result<(), SessionResult> {
         if self.off_reporter {
-            return Err(SessionResult::Err(StatusResult::ReporterIsOff))
+            return Err(SessionResult::Err(StatusResult::ReporterIsOff));
         }
-        
-        // Send to Reporter        
-        let _ = self.reporter_session.dispatch(Event::Subscribed(sender.clone())).await;
-        
-        self.reporter_session.register(sender).await        
+
+        // Send to Reporter
+        let _ = self
+            .reporter_session
+            .dispatch(Event::Subscribed(sender.clone()))
+            .await;
+
+        self.reporter_session.register(sender).await
     }
 
-
     /// insert to storage and persist to disk
-    pub async fn insert(&self, key: Key, doc: Document) -> Result<(), SessionResult> {
-        
+    #[inline]
+    pub async fn insert(&self, key: K, doc: Doc) -> Result<(), SessionResult> {
         match &self.wal_session {
             Some(wal) => {
-
                 let query = RQuery::Insert(key.clone(), doc.clone());
 
                 match wal.log(bincode::serialize(&query).unwrap()).await {
                     Err(e) => Err(e),
                     Ok(_) => {
-        
                         // if Reporter is on
                         if !self.off_reporter {
                             // Send to Reporter
                             let _ = self.reporter_session.dispatch(Event::Query(query)).await;
                         }
-        
 
-                        // Insert to indexes                        
-                        doc
-                            .extract()
-                            .into_iter()
-                            .for_each(|index_key| {
-                                self.index.insert(index_key, key.clone());
-                            });
+                        // Insert to indexes
+                        if let Err(e) = self.hash_index.insert(&key, &doc) {
+                            return Err(SessionResult::Err(e))
+                        }
+
+                        // Insert to tag_index
+                        self.tag_index.insert(&key, &doc);
+
+                        // insert to range
+                        self.range_index.insert(&key, &doc);
 
                         // Insert to memory
-                        self.engine.insert(key, doc);
-                        
+                        self.collection.insert(key, doc);
 
                         Ok(())
                     }
-                } 
+                }
             }
             None => {
-
                 // if Reporter is on
                 if !self.off_reporter {
-
                     // Insert to memory
                     let query = RQuery::Insert(key.clone(), doc.clone());
-                    
+
                     // Send to Reporter
                     let _ = self.reporter_session.dispatch(Event::Query(query)).await;
                 }
 
+                // Insert to indexes
+                if let Err(e) = self.hash_index.insert(&key, &doc) {
+                    return Err(SessionResult::Err(e))
+                }
 
-                // Insert to indexes                        
-                doc
-                    .extract()
-                    .into_iter()
-                    .for_each(|index_key| {
-                        self.index.insert(index_key, key.clone());
-                    });
-            
+                // Insert to tag_index
+                self.tag_index.insert(&key, &doc);
 
+                // insert to range
+                self.range_index.insert(&key, &doc);
 
                 // Insert to memory
-                self.engine.insert(key, doc);
+                self.collection.insert(key, doc);
 
                 Ok(())
             }
-        }       
+        }
     }
 
-
     /// remove from storage and persist to disk
-    pub async fn remove(&self, key: Key) -> Result<(), SessionResult> {
+    #[inline]
+    pub async fn remove(&self, key: K) -> Result<(), SessionResult> {
+        match self.collection.get(&key) {
+            Some(doc) => {
+                // remove from hash_index
+                self.hash_index.remove(doc.value());
 
+                // remove from tag_index
+                self.tag_index.remove(&key, doc.value());
 
-        match self.engine.get(&key) {
-            Some(doc) => {                
-                doc
-                    .value()
-                    .extract()
-                    .iter()
-                    .for_each(|key| {
-                        self.index.remove(key);
-                    });            
+                // remove to range
+                self.range_index.remove(&key, doc.value());
             }
             None => return Ok(()),
         }
 
+        self.collection.remove(&key);
 
-        self.engine.remove(&key);
-
-        let query = RQuery::<Key, Document>::Remove(key);
+        let query = RQuery::<K, Doc>::Remove(key);
 
         match &self.wal_session {
             Some(wal) => {
-
                 // Send to DiskLog
                 match wal.log(bincode::serialize(&query).unwrap()).await {
                     Ok(_) => {
-        
                         // if Reporter is on
                         if !self.off_reporter {
                             // Send to Reporter
                             let _ = self.reporter_session.dispatch(Event::Query(query)).await;
                         }
-        
+
                         Ok(())
                     }
                     Err(e) => Err(e),
                 }
             }
             None => {
-                
                 // if Reporter is on
                 if !self.off_reporter {
                     // Send to Reporter
                     let _ = self.reporter_session.dispatch(Event::Query(query)).await;
                 }
-        
-                Ok(())
 
+                Ok(())
             }
         }
     }
 
-
     /// gets documents  
-    pub fn gets(&self, list: Vec<&Key>) -> Vec<Ref<Key, Document>> {
+    #[inline]
+    pub fn gets(&self, list: Vec<&K>) -> Vec<Ref<K, Doc>> {
         let mut result = Vec::with_capacity(list.len());
-        
-        list
-          .iter()
-          .for_each(|key| {
-              if let Some(r) = self.engine.get(key) {
+
+        list.iter().for_each(|key| {
+            if let Some(r) = self.collection.get(key) {
                 result.push(r);
-              } 
-          });
-          
+            }
+        });
+
         result
     }
 
+    /// fetch document by range hash_index
+    #[inline]
+    pub fn range(&self, field_name: &String, from: String, to: String) -> Vec<Ref<K, Doc>> {
+        let mut result = Vec::new();
 
-    /// lookup by key
-    pub fn lookup(&self, key: &Key) -> Option<Ref<Key, Document>> {
-        return self.engine.get(key)
+        // collect and distinct keys
+        for k in self.range_index.range(field_name, from, to) {
+            if let Some(r) = self.collection.get(&k) {
+                result.push(r);
+            }
+        }
+
+        result
     }
 
+    /// lookup by key
+    #[inline]
+    pub fn lookup(&self, key: &K) -> Option<Ref<K, Doc>> {
+        return self.collection.get(key);
+    }
 
-    /// lookup by index
-    pub fn lookup_by_index(&self, index_key: &String) -> Option<Ref<Key, Document>> {
-        match self.index.get(index_key) {
-            Some(r) => {
-                return self.engine.get(&r.value())
+    /// lookup by hash_index
+    #[inline]
+    pub fn lookup_by_index(&self, index_key: &String) -> Option<Ref<K, Doc>> {
+        match self.hash_index.lookup(index_key) {
+            Some(rf) => {
+                self.collection.get(rf.value())
             }
-            None => None,
+            None => None
         }
     }
 
-
-    /// return Iter (Safe for mutation)
-    pub fn iter(&self) -> Iter<'_, Key, Document> {
-        self.engine.iter()
+    /// lookup by tag
+    #[inline]
+    pub fn lookup_by_tag(&self, tag: &String) -> Vec<Ref<K, Doc>> {
+        match self.tag_index.lookup(tag) {
+            Some(rf) => {
+                let mut result = Vec::with_capacity(rf.value().len());
+                for k in rf.value().iter() {
+                    if let Some(kd) = self.collection.get(&k) {
+                        result.push(kd);
+                    }  
+                }
+                result
+            }
+            None => vec![]
+        }
     }
 
+    /// return Iter (Safe for mutation)
+    #[inline]
+    pub fn iter(&self) -> Iter<'_, K, Doc> {
+        self.collection.iter()
+    }
 
     /// return Iter (Safe for mutation)
-    pub fn iter_index(&self) -> Iter<'_, String, Key> {
-        self.index.iter()
+    #[inline]
+    pub fn iter_index(&self) -> Iter<'_, String, K> {
+        self.hash_index.iter()
+    }
+
+    /// return Iter (Safe for mutation)
+    #[inline]
+    pub fn iter_tags(&self) -> Iter<String, DashSet<K>> {
+        self.tag_index.iter()
     }
 
 
 
     /// load storage from disk
+    #[inline]
     async fn loader(&self) {
-    
         // when storage just open with Disc Copies option it call loader, else it don't call
         let wal = self.wal_session.as_ref().unwrap();
 
         let mut page_index = 1;
 
         loop {
-
             // Get Page
             let mut logfile = match wal.get_page(page_index).await {
                 Ok(lf) => lf,
@@ -306,13 +339,13 @@ where
                             StatusResult::IoError(e) => eprintln!("==> {:?}", e),
                             StatusResult::Err(e) => eprintln!("==> {:?}", e),
                             _ => {}
-                        }  
-                    } 
+                        }
+                    }
 
-                    return
+                    return;
                 }
             };
-            
+
             page_index += 1;
 
             // Must Call Recover if return Err, remove unwrap()
@@ -323,34 +356,30 @@ where
                     return;
                 }
             };
-            
-            for qline in iter {
 
-                let query: RQuery<Key, Document> = bincode::deserialize(&qline.unwrap()).unwrap();
+            for qline in iter {
+                let query: RQuery<K, Doc> = bincode::deserialize(&qline.unwrap()).unwrap();
                 match query {
                     RQuery::Insert(key, doc) => {
+                        // Insert to indexes
+                        let _ = self.hash_index.insert(&key, &doc);
 
-                        doc
-                        .extract()
-                        .into_iter()
-                        .for_each(|index_key| {
-                            self.index.insert(index_key, key.clone());
-                        });
+                        // Insert to tag_index
+                        self.tag_index.insert(&key, &doc);
 
-                        // use engine insert to avoid rewrite to log after insert
-                        self.engine.insert(key, doc);                                                    
+                        // use collection insert to avoid rewrite to log after insert
+                        self.collection.insert(key, doc);
                     }
                     RQuery::Remove(key) => {
-                        if let Some(r) = self.engine.get(&key) {
-                            r.value()
-                            .extract()
-                            .iter()
-                            .for_each(|index_key| {
-                                self.index.remove(index_key);
-                            });
+                        if let Some(r) = self.collection.get(&key) {
+                            // remove hash_index
+                            self.hash_index.remove( r.value());
 
-                            self.engine.remove(&key);
-                        } 
+                            // remove from tag_index
+                            self.tag_index.remove(&key, r.value());
+
+                            self.collection.remove(&key);
+                        }
                     }
                 }
             }
@@ -358,20 +387,16 @@ where
     }
 }
 
-
-
 // used for log to disk
 #[derive(Serialize, Deserialize, Clone)]
-pub enum RQuery<Key, Document> {
-    Insert(Key, Document),
-    Remove(Key)
+pub enum RQuery<K, Doc> {
+    Insert(K, Doc),
+    Remove(K),
 }
-
 
 // used for reporting
 #[derive(Clone)]
-pub enum Event<Key, Document> {
-    Query(RQuery<Key, Document>),
-    Subscribed(Sender<Event<Key, Document>>)
-    // distributing signal like NodeFail, ....    
+pub enum Event<K, Doc> {
+    Query(RQuery<K, Doc>),
+    Subscribed(Sender<Event<K, Doc>>), // distributing signal like NodeFail, ....
 }

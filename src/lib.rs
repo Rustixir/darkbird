@@ -4,8 +4,8 @@ mod darkbird;
 
 pub use darkbird::{
     storage::Storage, 
-    indexer::Indexer,
     persistent_worker::{Persistent, DatabaseName, DatabaseSession, Stop},
+    document,
     RQuery, 
     Event,
     Options,

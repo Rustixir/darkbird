@@ -32,15 +32,21 @@ The darkbird provides the following:
 
 
 
-
 * **Concurrency** - darkbird use one of best high-concurrent HashMap (DashMap)[https://github.com/xacrimon/conc-map-bench]
   and **you don't need use Mutex/RwLock for sync between thread,
   storage is complete safe to shared between thread**
 
 
-* **Indexing**  - darkbird support indexing even dynamically
-  can decision about which fields in document be index
-  to find that document very fast
+* **Indexing**  - darkbird support indexing, can even dynamically
+  decision about which fields in document be indexed.
+  and each key must be unique unless return Duplicate error 
+
+
+* **Taging** -  each document can have multiple tags
+  And one tag can refer to many documents
+  The tag is great for indexing groups of documents
+  To retrieve very quickly by one key. For example
+  Players of a club, Developers of a company, etc
 
 
 
@@ -50,7 +56,7 @@ The darkbird provides the following:
   this module should be use before storage opened
 
 
-* **Persist to database** - copy storage to (postgres/cassandra/scylla) 
+* **copy/load to external database** - copy storage to (postgres/cassandra/scylla) 
   and load from that 
 
 
@@ -68,9 +74,17 @@ The darkbird provides the following:
 
 
 
-## Vsn 2.5.0
+## Vsn 3.0.0
+
+*  **Document model must implement three trait from this vsn**
 
 *  **Indexing** 
+
+*  **Taging** 
+
+*  **Range** 
+  range is like indexing but each key can ref to many documents
+  also can do range query over indexes to retrieve document.
 
 
 

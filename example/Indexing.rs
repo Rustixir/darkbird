@@ -1,4 +1,4 @@
-use darkbird::{Indexer, Options, Storage, StorageType};
+use darkbird::{Options, Storage, StorageType, document::{self, RangeField}};
 use serde_derive::{Deserialize, Serialize};
 
 #[tokio::main]
@@ -47,7 +47,11 @@ struct User {
     phone: String,
 }
 
-impl Indexer for User {
+
+impl document::Document for User {}
+
+
+impl document::Indexer for User {
     // this example indexing all fields
     fn extract(&self) -> Vec<String> {
         vec![
@@ -55,5 +59,17 @@ impl Indexer for User {
             self.pass.clone(),
             self.phone.clone(),
         ]
+    }
+}
+
+impl document::Tags for User {
+    fn get_tags(&self) -> Vec<String> {
+        vec![]
+    }
+}
+
+impl document::Range for User {
+    fn get_fields(&self) -> Vec<RangeField> {
+        vec![]
     }
 }

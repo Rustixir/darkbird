@@ -48,7 +48,7 @@ async fn main() {
     // remove from memory and send to (disk_log) and (reporter)
     s1.remove("+98 9370156893".to_owned()).await;
 
-    
+
 
     // iter over storage
     s1.iter().for_each(|r| {

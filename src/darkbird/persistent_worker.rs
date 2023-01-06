@@ -1,52 +1,47 @@
-
-
-
+use async_trait::async_trait;
+use scylla::{transport::errors::NewSessionError, Session, SessionBuilder};
+use serde::{de::DeserializeOwned, Serialize};
 use std::{hash::Hash, sync::Arc};
 
-use async_trait::async_trait;
-use scylla::{Session, SessionBuilder, transport::errors::NewSessionError};
+use tokio_postgres::{Client, Error, NoTls};
 
-
-use serde::{Serialize, de::DeserializeOwned};
-use tokio_postgres::{NoTls, Client, Error};
-
-use crate::{Storage, Indexer};
+use crate::{document::Document, Storage};
 
 use super::SessionResult;
 
-
 pub struct Stop;
 
-
 #[async_trait]
-pub trait Setter<Key, Document> {
+pub trait Setter<K, Doc> {
     async fn init(&self, session: &DatabaseSession);
-    async fn handle_setter(&self, session: &DatabaseSession, key: &Key, document: &Document) -> Result<(), Stop>;
+    async fn handle_setter(
+        &self,
+        session: &DatabaseSession,
+        key: &K,
+        document: &Doc,
+    ) -> Result<(), Stop>;
 }
 
 #[async_trait]
-pub trait Getter<Key, Document> {
-    async fn handle_getter(&self, session: &DatabaseSession) -> Vec<(Key, Document)>;
+pub trait Getter<K, Doc> {
+    async fn handle_getter(&self, session: &DatabaseSession) -> Vec<(K, Doc)>;
 }
-
 
 pub enum DatabaseName {
     Scylla,
-    Postgres
+    Postgres,
 }
 
 pub enum DatabaseSession {
     Scylla(Session),
-    Postgres(Client)
+    Postgres(Client),
 }
-
 
 pub struct Persistent {
     pub db_session: DatabaseSession,
 }
 
 impl Persistent {
-
     pub async fn connect(db_name: DatabaseName, cfg_string: String) -> Result<Persistent, ()> {
         match db_name {
             DatabaseName::Scylla => {
@@ -54,7 +49,7 @@ impl Persistent {
                     Ok(persistent) => persistent,
                     Err(e) => {
                         eprintln!("{}", e.to_string());
-                        return Err(())
+                        return Err(());
                     }
                 };
 
@@ -65,7 +60,7 @@ impl Persistent {
                     Ok(persistent) => persistent,
                     Err(e) => {
                         eprintln!("{}", e.to_string());
-                        return Err(())
+                        return Err(());
                     }
                 };
 
@@ -75,10 +70,9 @@ impl Persistent {
     }
 
     async fn connect_to_postgres(cfg_string: String) -> Result<Persistent, Error> {
-        
         let (client, connection) = match tokio_postgres::connect(&cfg_string, NoTls).await {
             Ok(res) => res,
-            Err(e) => return Err(e)
+            Err(e) => return Err(e),
         };
 
         // The connection object performs the actual communication with the database,
@@ -89,63 +83,72 @@ impl Persistent {
             }
         });
 
-        
         let persist = Persistent {
-            db_session: DatabaseSession::Postgres(client)
+            db_session: DatabaseSession::Postgres(client),
         };
 
         Ok(persist)
     }
 
     async fn connect_to_scylla(uri: String) -> Result<Persistent, NewSessionError> {
-        let session =  match SessionBuilder::new().known_node(uri).build().await {
-            Ok(session) => {
-                session
-            }
+        let session = match SessionBuilder::new().known_node(uri).build().await {
+            Ok(session) => session,
             Err(e) => return Err(e),
         };
-        
 
         let persist = Persistent {
-            db_session: DatabaseSession::Scylla(session)
+            db_session: DatabaseSession::Scylla(session),
         };
         Ok(persist)
     }
 
-
-
-    pub async fn copy_memtable_to_database<Key, Document, THandler>
-           (&self, 
-            storage: Arc<Storage<Key, Document>>,
-            handler: &THandler) 
-
-    where
-        Key      : Clone + Serialize + DeserializeOwned + Eq + Hash + Send + 'static,
-        Document : Clone + Serialize + DeserializeOwned + Indexer + Eq + Hash + Send + 'static,
-        THandler : Setter<Key, Document>
-    {     
+    pub async fn copy_memtable_to_database<K, Doc, THandler>(
+        &self,
+        storage: Arc<Storage<K, Doc>>,
+        handler: &THandler,
+    ) where
+        THandler: Setter<K, Doc>,
+        Doc: Serialize + DeserializeOwned + Clone + Send + 'static + Document,
+        K: Serialize
+            + DeserializeOwned
+            + PartialOrd
+            + Ord
+            + PartialEq
+            + Eq
+            + Hash
+            + Clone
+            + Send
+            + 'static,
+    {
         for refi in storage.iter() {
             let key = refi.key();
             let document = refi.value();
 
             if let Err(Stop) = handler.handle_setter(&self.db_session, key, document).await {
                 println!("Stop copying ....");
-                return
+                return;
             }
-        }                
+        }
     }
 
-
-
-    pub async fn load_memtable_from_database<Key, Document, THandler>
-            (&self,
-             storage: Arc<Storage<Key, Document>>,
-             handler: &THandler) -> Result<(), SessionResult>
-    
+    pub async fn load_memtable_from_database<K, Doc, THandler>(
+        &self,
+        storage: Arc<Storage<K, Doc>>,
+        handler: &THandler,
+    ) -> Result<(), SessionResult>
     where
-        Key      : Clone + Serialize + DeserializeOwned + Eq + Hash + Send + 'static,
-        Document : Clone + Serialize + DeserializeOwned + Indexer + Eq + Hash + Send + 'static,
-        THandler : Getter<Key, Document>       
+        THandler: Getter<K, Doc>,
+        Doc: Serialize + DeserializeOwned + Clone + Send + 'static + Document,
+        K: Serialize
+            + DeserializeOwned
+            + PartialOrd
+            + Ord
+            + PartialEq
+            + Eq
+            + Hash
+            + Clone
+            + Send
+            + 'static,
     {
         // Call Getter
         let list = handler.handle_getter(&self.db_session).await;
@@ -153,11 +156,10 @@ impl Persistent {
         // Fill Memtable
         for (key, document) in list.into_iter() {
             if let Err(e) = storage.insert(key, document).await {
-                return Err(e)
+                return Err(e);
             }
         }
 
-        return Ok(())
+        return Ok(());
     }
 }
-

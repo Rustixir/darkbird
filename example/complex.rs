@@ -83,4 +83,25 @@ impl User {
     } 
 }
 
+impl document::Document for User {}
+
+
+impl document::Indexer for User {
+    fn extract(&self) -> Vec<String> {
+        vec![]
+    }
+}
+
+impl document::Tags for User {
+    fn get_tags(&self) -> Vec<String> {
+        vec![]
+    }
+}
+
+impl document::Range for User {
+    fn get_fields(&self) -> Vec<RangeField> {
+        vec![]
+    }
+}
+
 
