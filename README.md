@@ -47,7 +47,7 @@ The darkbird provides the following:
 * **Taging** -  each document can have multiple tags
   And one tag can refer to many documents
   The tag is great for indexing groups of documents
-  To retrieve very quickly by key. For example
+  To retrieve very fast by key. For example
   Players of a club, Developers of a company, etc
 
 
