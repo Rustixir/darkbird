@@ -41,7 +41,7 @@ The darkbird provides the following:
 
 * **Indexing**  - darkbird support indexing, can even dynamically
   decision about which fields in document be indexed.
-  and each key must be unique unless return Duplicate error 
+  and each key must be unique else return Duplicate error 
 
 
 * **Taging** -  each document can have multiple tags
