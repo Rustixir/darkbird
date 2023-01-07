@@ -64,8 +64,7 @@ The darkbird provides the following:
 
 
 * **Event Handling** - can subscribe any channel you want to storage, they
-  get storage event (```RQuery<Key, Document>, Subscribed(tokio::mpsc::Sender(Event<key, document>))```)
- 
+  receive events
 
 
 ## Vsn 2.0.0
