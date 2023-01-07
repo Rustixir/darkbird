@@ -85,7 +85,7 @@ The darkbird provides the following:
 
 *  **Range** 
   range is like indexing but each key can ref to many documents
-  also can do range query over indexes to retrieve document.
+  also can do range query over indexes to retrieve documents.
 
 
 
