@@ -11,7 +11,7 @@
 </div>
 
 
-**DarkBird is a Document oriented, concurrency, in-memory Storage, 
+**DarkBird is a Document oriented, realtime, in-memory storage , 
 highly optimized for retrieve document very fast with
 indexing and taging feature also persist data 
 to disk to avoid loss any data**
