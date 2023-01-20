@@ -13,6 +13,10 @@ pub trait Range {
     fn get_fields(&self) -> Vec<RangeField>;
 }
 
+pub trait GetContent {
+    fn get_content(&self) -> Option<String>;
+}
+
 
 pub struct RangeField {
     pub name: String,

@@ -3,19 +3,19 @@ use serde::{de::DeserializeOwned, Serialize};
 use serde_derive::{Deserialize, Serialize};
 use simple_wal::LogError;
 use std::hash::Hash;
-use tokio::sync::mpsc::Sender;
+use tokio::{sync::mpsc::Sender, task::JoinHandle};
 
 use dashmap::{iter::Iter, mapref::one::Ref, DashMap, DashSet};
 
 
 use super::{
     disk_log::{DiskLog, Session},
-    index::{hash::HashIndex, range::RangeIndex, tags::TagIndex},
+    index::{hash::HashIndex, range::RangeIndex, tags::TagIndex, inverted_index::InvertedIndex},
     router::{self, Router},
     Options, StatusResult, StorageType,
 };
 
-use crate::{darkbird::SessionResult, document::Document};
+use crate::{darkbird::SessionResult, document::{Document, GetContent}};
 
 pub struct Storage<K, Doc: Document> {
     // DashMap
@@ -29,6 +29,9 @@ pub struct Storage<K, Doc: Document> {
 
     // RangeIndex
     range_index: RangeIndex<K>,
+
+    // InvertedIndex
+    inverted_index: InvertedIndex<K>,
 
     // Wal session
     wal_session: Option<Session>,
@@ -51,6 +54,7 @@ where
         + Hash
         + Clone
         + Send
+        + Sync
         + 'static,
 {
     pub async fn open<'a>(ops: Options<'a>) -> Result<Self, LogError> {
@@ -70,6 +74,7 @@ where
                         hash_index: HashIndex::new(),
                         tag_index: TagIndex::new(),
                         range_index: RangeIndex::new(),
+                        inverted_index: InvertedIndex::new(),
                         wal_session: Some(wal_session),
                         reporter_session: reporter,
                         off_reporter: false,
@@ -93,6 +98,7 @@ where
                 hash_index: HashIndex::new(),
                 tag_index: TagIndex::new(),
                 range_index: RangeIndex::new(),
+                inverted_index: InvertedIndex::new(),
                 wal_session: None,
                 reporter_session: reporter,
                 off_reporter: false,
@@ -128,64 +134,52 @@ where
     /// insert to storage and persist to disk
     #[inline]
     pub async fn insert(&self, key: K, doc: Doc) -> Result<(), SessionResult> {
-        match &self.wal_session {
-            Some(wal) => {
-                let query = RQuery::Insert(key.clone(), doc.clone());
 
-                match wal.log(bincode::serialize(&query).unwrap()).await {
-                    Err(e) => Err(e),
-                    Ok(_) => {
-                        // if Reporter is on
-                        if !self.off_reporter {
-                            // Send to Reporter
-                            let _ = self.reporter_session.dispatch(Event::Query(query)).await;
-                        }
-
-                        // Insert to indexes
-                        if let Err(e) = self.hash_index.insert(&key, &doc) {
-                            return Err(SessionResult::Err(e))
-                        }
-
-                        // Insert to tag_index
-                        self.tag_index.insert(&key, &doc);
-
-                        // insert to range
-                        self.range_index.insert(&key, &doc);
-
-                        // Insert to memory
-                        self.collection.insert(key, doc);
-
-                        Ok(())
-                    }
-                }
+        if let Some(wal) = &self.wal_session {
+            let query = RQuery::Insert(key.clone(), doc.clone());
+            
+            if let Err(e) = wal.log(bincode::serialize(&query).unwrap()).await {
+                return Err(e);
             }
-            None => {
-                // if Reporter is on
-                if !self.off_reporter {
-                    // Insert to memory
-                    let query = RQuery::Insert(key.clone(), doc.clone());
-
-                    // Send to Reporter
-                    let _ = self.reporter_session.dispatch(Event::Query(query)).await;
-                }
-
-                // Insert to indexes
-                if let Err(e) = self.hash_index.insert(&key, &doc) {
-                    return Err(SessionResult::Err(e))
-                }
-
-                // Insert to tag_index
-                self.tag_index.insert(&key, &doc);
-
-                // insert to range
-                self.range_index.insert(&key, &doc);
-
-                // Insert to memory
-                self.collection.insert(key, doc);
-
-                Ok(())
+            
+            if !self.off_reporter {
+                let _ = self.reporter_session.dispatch(Event::Query(query)).await;
             }
         }
+
+    
+        // Insert to indexes
+        if let Err(e) = self.hash_index.insert(&key, &doc) {
+            return Err(SessionResult::Err(e))
+        }
+
+        // Insert to tag_index
+        self.tag_index.insert(&key, &doc);
+
+        // Insert to range
+        self.range_index.insert(&key, &doc);
+
+        // Insert to memory
+        self.collection.insert(key, doc);
+
+        Ok(())
+
+
+    }
+
+
+    #[inline]
+    pub fn insert_content<ContentProvider: GetContent>(&self, key: K, cp: &ContentProvider) 
+        -> Option<JoinHandle<()>> {
+        match cp.get_content() {
+            Some(content) => Some(self.inverted_index.insert(key, content)),
+            None => None,
+        }
+    }
+
+    #[inline]
+    pub fn remove_content(&self, key: K, content: String) -> JoinHandle<()> {
+        self.inverted_index.remove(key, content)
     }
 
     /// remove from storage and persist to disk
@@ -201,6 +195,7 @@ where
 
                 // remove to range
                 self.range_index.remove(&key, doc.value());
+
             }
             None => return Ok(()),
         }
@@ -208,7 +203,7 @@ where
         self.collection.remove(&key);
 
         let query = RQuery::<K, Doc>::Remove(key);
-
+    
         match &self.wal_session {
             Some(wal) => {
                 // Send to DiskLog
@@ -235,6 +230,7 @@ where
                 Ok(())
             }
         }
+
     }
 
     /// gets documents  
@@ -298,6 +294,22 @@ where
             }
             None => vec![]
         }
+    }
+
+    /// search by text
+    #[inline]
+    pub fn search(&self, text: String) -> Vec<Ref<K, Doc>> {
+        let words: Vec<&str> = text.split_whitespace().collect();
+        let keys = self.inverted_index.search(words);
+        let mut result = Vec::with_capacity(keys.len());
+        
+        for key in keys {
+            if let Some(rd) = self.collection.get(&key) {
+                result.push(rd);
+            }
+        }
+
+        result
     }
 
     /// return Iter (Safe for mutation)

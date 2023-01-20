@@ -43,6 +43,9 @@ The darkbird provides the following:
   decision about which fields in document be indexed.
   and each key must be unique else return Duplicate error 
 
+* **FullText Search** - darkbird added InvertedIndex
+  from version 3.5.0 for support FullText Search operation 
+
 
 * **Taging** -  each document can have multiple tags
   And one tag can refer to many documents
@@ -87,6 +90,11 @@ The darkbird provides the following:
   range is like indexing but each key can ref to many documents
   also can do range query over indexes to retrieve documents.
 
+
+## Vsn 3.5.0
+
+* **FullText Search** provide three api 
+  insert_content(document_key, content) , remove_content(document_key, content) , search(...)
 
 
 Examples
