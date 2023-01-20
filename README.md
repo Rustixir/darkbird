@@ -44,7 +44,7 @@ The darkbird provides the following:
   and each key must be unique else return Duplicate error 
 
 * **FullText Search** - darkbird added InvertedIndex
-  from version 3.5.0 for support FullText Search operation 
+  from version 3.5.0 for supports FullText Search operation 
 
 
 * **Taging** -  each document can have multiple tags
