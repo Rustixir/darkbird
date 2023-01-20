@@ -43,6 +43,7 @@ The darkbird provides the following:
   decision about which fields in document be indexed.
   and each key must be unique else return Duplicate error 
 
+
 * **FullText Search** - darkbird added InvertedIndex
   from version 3.5.0 for supports FullText Search operation 
 
@@ -94,7 +95,9 @@ The darkbird provides the following:
 ## Vsn 3.5.0
 
 * **FullText Search** provide three api 
-  insert_content(document_key, content) , remove_content(document_key, content) , search(...)
+  `insert_content(document_key, content)` 
+  `remove_content(document_key, content)` 
+  `search(...)`
 
 
 Examples
