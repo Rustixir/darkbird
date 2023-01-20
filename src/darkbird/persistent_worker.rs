@@ -118,6 +118,7 @@ impl Persistent {
             + Hash
             + Clone
             + Send
+            + Sync
             + 'static,
     {
         for refi in storage.iter() {
@@ -148,6 +149,7 @@ impl Persistent {
             + Hash
             + Clone
             + Send
+            + Sync
             + 'static,
     {
         // Call Getter

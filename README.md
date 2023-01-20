@@ -11,7 +11,7 @@
 </div>
 
 
-**DarkBird is a Document oriented, concurrency, in-memory Storage, 
+**DarkBird is a Document oriented, realtime, in-memory storage , 
 highly optimized for retrieve document very fast with
 indexing and taging feature also persist data 
 to disk to avoid loss any data**
@@ -41,13 +41,16 @@ The darkbird provides the following:
 
 * **Indexing**  - darkbird support indexing, can even dynamically
   decision about which fields in document be indexed.
-  and each key must be unique unless return Duplicate error 
+  and each key must be unique else return Duplicate error 
+
+* **FullText Search** - darkbird added InvertedIndex
+  from version 3.5.0 for support FullText Search operation 
 
 
 * **Taging** -  each document can have multiple tags
   And one tag can refer to many documents
   The tag is great for indexing groups of documents
-  To retrieve very quickly by one key. For example
+  To retrieve very fast by key. For example
   Players of a club, Developers of a company, etc
 
 
@@ -64,8 +67,7 @@ The darkbird provides the following:
 
 
 * **Event Handling** - can subscribe any channel you want to storage, they
-  get storage event (```RQuery<Key, Document>, Subscribed(tokio::mpsc::Sender(Event<key, document>))```)
- 
+  receive events
 
 
 ## Vsn 2.0.0
@@ -86,8 +88,13 @@ The darkbird provides the following:
 
 *  **Range** 
   range is like indexing but each key can ref to many documents
-  also can do range query over indexes to retrieve document.
+  also can do range query over indexes to retrieve documents.
 
+
+## Vsn 3.5.0
+
+* **FullText Search** provide three api 
+  insert_content(document_key, content) , remove_content(document_key, content) , search(...)
 
 
 Examples
