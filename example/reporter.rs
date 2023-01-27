@@ -92,3 +92,9 @@ impl document::Range for User {
         vec![]
     }
 }
+
+impl document::MaterializedView for User {
+    fn filter(&self) -> Option<String> {
+        None
+    }
+}

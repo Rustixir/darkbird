@@ -48,6 +48,14 @@ The darkbird provides the following:
   from version 3.5.0 for supports FullText Search operation 
 
 
+* **Materialized View** - provide trait for document model
+  `doc.filter(...)` that return `None` or `Some(view_name)`
+  when document inserting to storage, 
+  if exist (returned) `Some(view_name)` just store document key,
+  **Darkbird is first class support materialized view** because
+  move cost of heavy operation from search time to insert time 
+  target of dardkbird is ultra fast retrieving data for RealTime system.
+
 * **Taging** -  each document can have multiple tags
   And one tag can refer to many documents
   The tag is great for indexing groups of documents
@@ -97,8 +105,23 @@ The darkbird provides the following:
 * **FullText Search** provide three api 
   `insert_content(document_key, content)` 
   `remove_content(document_key, content)` 
-  `search(...)`
+  `search(...)`()
 
+## Vsn 4.0.0
+
+* **Materialized View** 
+  from this version Document model must impl MaterializedView trait
+  that call `doc.filter()` to get None or ViewName to store on view
+  darkbird extract from doc model for remove or insert operation
+  and provide one api for get view models `storage.fetch_view(...)`
+
+* **&str instead of &String**
+  `&str` is better for calling storage api
+  because can call with (static str) param,
+  and better performance until use `&String::From("")`
+
+* **All example updates**
+  and from this point I try to add features to be compatible with before
 
 Examples
 =============
@@ -106,9 +129,22 @@ Examples
 The complete Examples on [Link](https://github.com/Rustixir/darkbird/tree/main/example).
 
 
-
 Crate
 =============
 ```
-darkbird = "2.0.0"
+darkbird = "4.0.0"
 ```
+
+
+
+My Plans
+=============
+
+1. write great and complete document
+   to everyone can know about architecture.
+
+
+2. **Key expiry** like redis.
+
+
+3. **Distributing** 

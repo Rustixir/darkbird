@@ -77,14 +77,14 @@ where
 
     /// remove tree from multi-tree
     #[inline]
-    pub fn remove_tree(&self, field_name: &String) {
+    pub fn remove_tree(&self, field_name: &str) {
         self.multi_btree.remove(field_name);
     }
 
 
     /// fetch document by range hash_index
     #[inline]
-    pub fn range(&self, field_name: &String, from: String, to: String) -> Vec<K> {
+    pub fn range(&self, field_name: &str, from: String, to: String) -> Vec<K> {
         let set = match self.multi_btree.get(field_name) {
             Some(tree) => {
                 let mut set_result = BTreeSet::new();

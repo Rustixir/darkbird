@@ -104,4 +104,11 @@ impl document::Range for User {
     }
 }
 
+impl document::MaterializedView for User {
+    fn filter(&self) -> Option<String> {
+        None
+    }
+}
+
+
 

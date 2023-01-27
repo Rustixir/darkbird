@@ -1,5 +1,5 @@
 
-pub trait Document: Indexer + Tags + Range {}
+pub trait Document: Indexer + Tags + Range + MaterializedView {}
 
 pub trait Indexer {
     fn extract(&self) -> Vec<String>;
@@ -12,6 +12,11 @@ pub trait Tags {
 pub trait Range {
     fn get_fields(&self) -> Vec<RangeField>;
 }
+
+pub trait MaterializedView {
+    fn filter(&self) -> Option<String>;
+}
+
 
 pub trait GetContent {
     fn get_content(&self) -> Option<String>;
