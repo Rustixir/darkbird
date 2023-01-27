@@ -22,11 +22,12 @@ async fn main() {
     // return joinHandle and if you want search after insert, always await on this
     let _ = storage.insert_content(key.clone(), &doc).unwrap().await;
     
-    storage.insert(key.clone(), doc.clone()).await.unwrap();
+    storage.insert(key.clone(), doc).await.unwrap();
 
 
-    let result = storage.search(String::from("Is AMazing"));
+    let result = storage.search(String::from("Is AMazing")).await;
 
+    
     if result[0].value().fullname.eq("DanyalMh") {
         println!("find !!");
 
@@ -34,7 +35,9 @@ async fn main() {
         // return joinHandle 
 
         // use doc.get_content to get all text to remove complete from storage
-        let _ = storage.remove_content(key, doc.get_content().unwrap()).await;
+        // if you make sure document exist in storage call unwrap unless if document 
+        // not exit in storage check result
+        let _ = storage.remove_content(key).unwrap().await;
     }
 
 
@@ -85,8 +88,14 @@ impl document::Range for User {
     }
 }
 
+impl document::MaterializedView for User {
+    fn filter(&self) -> Option<String> {
+        None
+    }
+}
 
-// GetContent must impl just, when using storage.insert_content(...) 
+
+// GetContent must impl just, when using ( storage.insert_content(...)  || storage.remove_content(...) )
 impl GetContent for User {
     fn get_content(&self) -> Option<String> {
         Some(self.desc.clone())

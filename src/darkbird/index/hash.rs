@@ -61,7 +61,7 @@ where
 
     /// lookup by index_key
     #[inline]
-    pub fn lookup(&self, index_key: &String) -> Option<Ref<String, K>>{
+    pub fn lookup(&self, index_key: &str) -> Option<Ref<String, K>>{
         self.hash.get(index_key)
     }
 

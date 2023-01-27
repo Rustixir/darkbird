@@ -24,9 +24,9 @@ async fn main() {
 
     
 
-    let res1 = storage.lookup_by_index(&"Danyalmhai".to_owned()).unwrap();
-    let res2 = storage.lookup_by_index(&"652398".to_owned()).unwrap();
-    let res3 = storage.lookup_by_index(&"09370156893".to_owned()).unwrap();
+    let res1 = storage.lookup_by_index("Danyalmhai").unwrap();
+    let res2 = storage.lookup_by_index("652398").unwrap();
+    let res3 = storage.lookup_by_index("09370156893").unwrap();
 
     
 
@@ -71,5 +71,11 @@ impl document::Tags for User {
 impl document::Range for User {
     fn get_fields(&self) -> Vec<RangeField> {
         vec![]
+    }
+}
+
+impl document::MaterializedView for User {
+    fn filter(&self) -> Option<String> {
+        None
     }
 }

@@ -17,6 +17,8 @@ use super::{
 
 use crate::{darkbird::SessionResult, document::{Document, GetContent}};
 
+
+
 pub struct Storage<K, Doc: Document> {
     // DashMap
     collection: DashMap<K, Doc>,
@@ -152,6 +154,13 @@ where
         if let Err(e) = self.hash_index.insert(&key, &doc) {
             return Err(SessionResult::Err(e))
         }
+        
+
+        // Insert to view
+        if let Some(view_name) = doc.filter() {
+            self.tag_index.insert_view(&view_name, &key)
+        }
+
 
         // Insert to tag_index
         self.tag_index.insert(&key, &doc);
@@ -167,7 +176,6 @@ where
 
     }
 
-
     #[inline]
     pub fn insert_content<ContentProvider: GetContent>(&self, key: K, cp: &ContentProvider) 
         -> Option<JoinHandle<()>> {
@@ -178,8 +186,19 @@ where
     }
 
     #[inline]
-    pub fn remove_content(&self, key: K, content: String) -> JoinHandle<()> {
-        self.inverted_index.remove(key, content)
+    pub fn remove_content(&self, key: K) -> Option<JoinHandle<()>>
+    where 
+        Doc: Document + GetContent 
+    {
+        if let Some(doc) = self.collection.get(&key) {
+            if let Some(content) = doc.value().get_content() {
+                Some(self.inverted_index.remove(key, content))   
+            } else {
+                None
+            }
+        } else {
+            None
+        }
     }
 
     /// remove from storage and persist to disk
@@ -187,8 +206,15 @@ where
     pub async fn remove(&self, key: K) -> Result<(), SessionResult> {
         match self.collection.get(&key) {
             Some(doc) => {
+
+
                 // remove from hash_index
                 self.hash_index.remove(doc.value());
+
+                // remove from view
+                if let Some(view_name) = doc.filter() {
+                    self.tag_index.remove_from_view(&view_name, &key)
+                }
 
                 // remove from tag_index
                 self.tag_index.remove(&key, doc.value());
@@ -249,7 +275,7 @@ where
 
     /// fetch document by range hash_index
     #[inline]
-    pub fn range(&self, field_name: &String, from: String, to: String) -> Vec<Ref<K, Doc>> {
+    pub fn range(&self, field_name: &str, from: String, to: String) -> Vec<Ref<K, Doc>> {
         let mut result = Vec::new();
 
         // collect and distinct keys
@@ -270,7 +296,7 @@ where
 
     /// lookup by hash_index
     #[inline]
-    pub fn lookup_by_index(&self, index_key: &String) -> Option<Ref<K, Doc>> {
+    pub fn lookup_by_index(&self, index_key: &str) -> Option<Ref<K, Doc>> {
         match self.hash_index.lookup(index_key) {
             Some(rf) => {
                 self.collection.get(rf.value())
@@ -281,7 +307,7 @@ where
 
     /// lookup by tag
     #[inline]
-    pub fn lookup_by_tag(&self, tag: &String) -> Vec<Ref<K, Doc>> {
+    pub fn lookup_by_tag(&self, tag: &str) -> Vec<Ref<K, Doc>> {
         match self.tag_index.lookup(tag) {
             Some(rf) => {
                 let mut result = Vec::with_capacity(rf.value().len());
@@ -295,6 +321,24 @@ where
             None => vec![]
         }
     }
+
+    /// fetch view
+    #[inline]
+    pub fn fetch_view(&self, view_name: &str) -> Vec<Ref<K, Doc>> {
+        match self.tag_index.lookup_view(view_name) {
+            Some(rf) => {
+                let mut result = Vec::with_capacity(rf.value().len());
+                for k in rf.value().iter() {
+                    if let Some(kd) = self.collection.get(&k) {
+                        result.push(kd);
+                    }  
+                }
+                result
+            }
+            None => vec![]
+        }
+    }
+
 
     /// search by text
     #[inline]
@@ -330,8 +374,7 @@ where
         self.tag_index.iter()
     }
 
-
-
+    
     /// load storage from disk
     #[inline]
     async fn loader(&self) {
@@ -410,5 +453,5 @@ pub enum RQuery<K, Doc> {
 #[derive(Clone)]
 pub enum Event<K, Doc> {
     Query(RQuery<K, Doc>),
-    Subscribed(Sender<Event<K, Doc>>), // distributing signal like NodeFail, ....
+    Subscribed(Sender<Event<K, Doc>>), 
 }

@@ -16,52 +16,42 @@ async fn main() {
     let ops = Options::new(path, storage_name, total_page_size, stype);
     let storage = Storage::<Pid, User>::open(ops).await.unwrap();
 
+    // Generate
     for num in 0..20 {
         let id = format!("1234567{}", num);
         let u = User {
             name: "Danyalmhai".to_string(),
-            work_at: if num > 10 {
-                Company::Uber
-            } else {
-                Company::Instagram
-            },
+            age: num % 24,
+            account_type: if (num% 25) > 18 { AccountType::Admin } else { AccountType::Guest },
+            access_level: if (num% 25) > 23 { 1 } else { 3 }
         };
 
         storage.insert(id, u).await.unwrap();
     }
 
-    let result = storage.lookup_by_tag(Company::Uber.to_str());
-    for emp in result.iter() {
-        match emp.value().work_at {
-            Company::Uber => {
-                println!("==> {:?} work at Uber", emp.value().name);                
-            }
-            _ => panic!("unexcepted")
-        }
-    }
+    let super_admins = storage.fetch_view("Super Admin");
+    let admins = storage.fetch_view("Super Admin");
+
 }
 
 type Pid = String;
 
+
 #[derive(Serialize, Deserialize, Clone, Debug)]
-enum Company {
-    Instagram,
-    Uber,
+enum AccountType {
+    Admin,
+    Guest
 }
-impl ToString for Company {
-    fn to_string(&self) -> &str {
-        match self {
-            Company::Instagram => "Instagram",
-            Company::Uber => "Uber",
-        }
-    }
-}
+
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
 struct User {
     name: String,
-    work_at: Company,
+    age: i32,
+    account_type: AccountType,
+    access_level: u8
 }
+
 
 impl document::Document for User {}
 
@@ -73,7 +63,7 @@ impl document::Indexer for User {
 
 impl document::Tags for User {
     fn get_tags(&self) -> Vec<String> {
-        vec![self.work_at.to_string()]
+        vec![]
     }
 }
 
@@ -84,7 +74,14 @@ impl document::Range for User {
 }
 
 impl document::MaterializedView for User {
+
+    // Return None or Some(view_name)
     fn filter(&self) -> Option<String> {
-        None
+        match (&self.account_type, self.access_level) {
+            
+            (AccountType::Admin, 1, )  => Some(format!("Super Admin")),
+            (AccountType::Admin, _, )  => Some(format!("Admin")),
+            (AccountType::Guest, _, )  => None,                 
+        }
     }
 }
