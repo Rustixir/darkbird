@@ -23,7 +23,7 @@ async fn main() {
             name: "Danyalmhai".to_string(),
             age: num % 24,
             account_type: if (num% 25) > 18 { AccountType::Admin } else { AccountType::Guest },
-            access_level: if (num% 25) > 23 { 1 } else { 3 }
+            access_level: if (num% 25) >= 23 { 1 } else { 3 }
         };
 
         storage.insert(id, u).await.unwrap();
