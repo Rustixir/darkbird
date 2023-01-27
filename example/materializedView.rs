@@ -30,7 +30,7 @@ async fn main() {
     }
 
     let super_admins = storage.fetch_view("Super Admin");
-    let admins = storage.fetch_view("Super Admin");
+    let admins = storage.fetch_view("Admin");
 
 }
 
