@@ -54,7 +54,7 @@ The darkbird provides the following:
   if exist (returned) `Some(view_name)` just store document key,
   **Darkbird is first class support materialized view** because
   move cost of heavy operation from search time to insert time 
-  target of dardkbird is ultra fast retrieving data for RealTime system.
+  target of darkbird is ultra fast retrieving data for RealTime system.
 
 * **Taging** -  each document can have multiple tags
   And one tag can refer to many documents
