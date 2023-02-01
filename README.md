@@ -1,8 +1,6 @@
-
 ![DarkBird](https://github.com/Rustixir/darkbird/blob/main/darkbird.png)
 
 <div align="center">
-
   <!-- Downloads -->
   <a href="https://crates.io/crates/darkbird">
     <img src="https://img.shields.io/crates/d/darkbird.svg?style=flat-square"
@@ -10,141 +8,36 @@
   </a>
 </div>
 
+DarkBird is a _document-oriented_, _real-time_, _in-memory_ storage solution optimized for fast **document retrieval**.
 
-**DarkBird is a Document oriented, realtime, in-memory storage , 
-highly optimized for retrieve document very fast with
-indexing and taging feature also persist data 
-to disk to avoid loss any data**
+## Features
+- **Persistent**: Uses a _non-blocking_ write-ahead-logging engine for data persistence, storing data to multiple pages.
+- **In-memory**: Data is stored in memory, with two modes (_DiskCopies_, _RamCopies_), the first persisting data to disk and reloading the data into memory after restart.
+- **Concurrency**: Uses a high-concurrent HashMap ([_DashMap_](https://github.com/xacrimon/conc-map-bench)) and doesn't require Mutex/RwLock for thread synchronization.
+- **Indexing**: Supports indexing, allowing for dynamic decision-making about which document fields to index.
+- **Full-text search**: Supports full-text search operations since version 3.5.0.
+- **Materialized view**: Provides a trait for the document model `(doc.filter(...))` that returns `Some(view_name)` or `None` when a document is inserted into the storage.
+- **Tagging**: Each document can have multiple tags, and one tag can refer to many documents, making it great for indexing groups of documents for fast retrieval by key.
+- **Migration**: The storage model is (Key, Document), and you can use `migration::run` to change the existing (Key, Document) data on disk before opening the storage.
+- **External database support**: Copy storage data to Postgres/Cassandra/Scylla and load from it.
+- **Event handling**: Subscribe to any channel to receive events.
 
+## Crate
 
-
-
-
-The darkbird provides the following:
-
-* **Persistent** - use **Non-Blocking** write-ahead-logging engine for persistency data, 
-  also store data to multiple pages with total_page_size
-  
-
-
-* **In-memory** - whole data stored in-memory 
-  with two mode ( **DiskCopies** , **RamCopies** )
-  both stored in-memory but DiskCopies persistent data to disk and
-  after restart, darkbird **load whole data to memory**
-
-
-
-* **Concurrency** - darkbird use one of best high-concurrent HashMap (DashMap)[https://github.com/xacrimon/conc-map-bench]
-  and **you don't need use Mutex/RwLock for sync between thread,
-  storage is complete safe to shared between thread**
-
-
-* **Indexing**  - darkbird support indexing, can even dynamically
-  decision about which fields in document be indexed.
-  and each key must be unique else return Duplicate error 
-
-
-* **FullText Search** - darkbird added InvertedIndex
-  from version 3.5.0 for supports FullText Search operation 
-
-
-* **Materialized View** - provide trait for document model
-  `doc.filter(...)` that return `None` or `Some(view_name)`
-  when document inserting to storage, 
-  if exist (returned) `Some(view_name)` just store document key,
-  **Darkbird is first class support materialized view** because
-  move cost of heavy operation from search time to insert time 
-  target of darkbird is ultra fast retrieving data for RealTime system.
-
-* **Taging** -  each document can have multiple tags
-  And one tag can refer to many documents
-  The tag is great for indexing groups of documents
-  To retrieve very fast by key. For example
-  Players of a club, Developers of a company, etc
-
-
-
-* **Migration** - darkbird storage model is (Key, Document)
-  if you want change Document Model, can use `migration::run` 
-  for **change all (Key, Document) already exist in disk**
-  this module should be use before storage opened
-
-
-* **copy/load to external database** - copy storage to (postgres/cassandra/scylla) 
-  and load from that 
-
-
-
-* **Event Handling** - can subscribe any channel you want to storage, they
-  receive events
-
-
-## Vsn 2.0.0
-
-*  **Improve Performance** 
-
-*  **Persistent** Copy whole data to Database and load from that 
-
-
-
-## Vsn 3.0.0
-
-*  **Document model must implement three trait from this vsn**
-
-*  **Indexing** 
-
-*  **Taging** 
-
-*  **Range** 
-  range is like indexing but each key can ref to many documents
-  also can do range query over indexes to retrieve documents.
-
-
-## Vsn 3.5.0
-
-* **FullText Search** provide three api 
-  `insert_content(document_key, content)` 
-  `remove_content(document_key, content)` 
-  `search(...)`()
-
-## Vsn 4.0.0
-
-* **Materialized View** 
-  from this version Document model must impl MaterializedView trait
-  that call `doc.filter()` to get None or ViewName to store on view
-  darkbird extract from doc model for remove or insert operation
-  and provide one api for get view models `storage.fetch_view(...)`
-
-* **&str instead of &String**
-  `&str` is better for calling storage api
-  because can call with (static str) param,
-  and better performance until use `&String::From("")`
-
-* **All example updates**
-  and from this point I try to add features to be compatible with before
-
-Examples
-=============
-
-The complete Examples on [Link](https://github.com/Rustixir/darkbird/tree/main/example).
-
-
-Crate
-=============
 ```
 darkbird = "4.0.0"
 ```
 
+## Examples
+See the complete examples [here](https://github.com/Rustixir/darkbird/tree/main/example).
 
+## Versions
+- **2.0.0**: Improved _performance_ and added _persistent copy_ of whole data to a database.
+- **3.0.0**: Implemented _indexing_, _tagging_, and _range queries_. **Document model must implement tree trait from this version**
+- **3.5.0**: Added _full-text search API_ (`insert_content(document_key, content)`, `remove_content(document_key, content)`, and `search(...)`).
+- **4.0.0**: Added _materialized view_ support. Document models must implement the MaterializedView trait, and API is provided to fetch view models. Uses `&str` instead of `&String` for better performance and API compatibility. All examples are updated.
 
-My Plans
-=============
-
-1. write great and complete document
-   to everyone can know about architecture.
-
-
-2. **Key expiry** like redis.
-
-
-3. **Distributing** 
+## Future plans
+- Write comprehensive **documentation** to explain the architecture.
+- Add **key expiry** similar to Redis.
+- **Distribution**.
