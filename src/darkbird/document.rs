@@ -1,5 +1,5 @@
 
-pub trait Document: Indexer + Tags + Range + MaterializedView {}
+pub trait Document: Indexer + Tags + Range + MaterializedView + FullText {}
 
 pub trait Indexer {
     fn extract(&self) -> Vec<String>;
@@ -18,7 +18,7 @@ pub trait MaterializedView {
 }
 
 
-pub trait GetContent {
+pub trait FullText {
     fn get_content(&self) -> Option<String>;
 }
 

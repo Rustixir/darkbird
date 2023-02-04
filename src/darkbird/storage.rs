@@ -3,7 +3,7 @@ use serde::{de::DeserializeOwned, Serialize};
 use serde_derive::{Deserialize, Serialize};
 use simple_wal::LogError;
 use std::hash::Hash;
-use tokio::{sync::mpsc::Sender, task::JoinHandle};
+use tokio::sync::mpsc::Sender;
 
 use dashmap::{iter::Iter, mapref::one::Ref, DashMap, DashSet};
 
@@ -15,7 +15,7 @@ use super::{
     Options, StatusResult, StorageType,
 };
 
-use crate::{darkbird::SessionResult, document::{Document, GetContent}};
+use crate::{darkbird::SessionResult, document::Document};
 
 
 
@@ -65,25 +65,26 @@ where
                 Err(e) => return Err(e),
                 Ok(disklog) => {
                     // Run DiskLog
-                    let wal_session = disklog.run_service();
 
                     // Run Reporter
                     let reporter = Router::<Event<K, Doc>>::new(vec![]).unwrap().run_service();
 
                     // Create Storage
-                    let st = Storage {
+                    let mut st = Storage {
                         collection: DashMap::new(),
                         hash_index: HashIndex::new(),
                         tag_index: TagIndex::new(),
                         range_index: RangeIndex::new(),
                         inverted_index: InvertedIndex::new(),
-                        wal_session: Some(wal_session),
+                        wal_session: None,
                         reporter_session: reporter,
                         off_reporter: ops.off_reporter,
                     };
 
                     // load from disk
                     st.loader().await;
+
+                    st.wal_session = Some(disklog.run_service());
 
                     return Ok(st);
                 }
@@ -107,6 +108,8 @@ where
             };
 
             // loader off
+            st.loader().await;
+
 
             return Ok(st);
         }
@@ -157,11 +160,19 @@ where
         }
 
 
+        // Insert to InvertedIndex
+        if let Some(content) = doc.get_content() {
+            let _ = self.inverted_index.insert(key, content).await;
+        }
+
+
         // Insert to tag_index
         self.tag_index.insert(&key, &doc);
 
+
         // Insert to range
         self.range_index.insert(&key, &doc);
+
 
         // Insert to memory
         self.collection.insert(key, doc);
@@ -169,31 +180,6 @@ where
         Ok(())
 
 
-    }
-
-    #[inline]
-    pub fn insert_content<ContentProvider: GetContent>(&self, key: K, cp: &ContentProvider) 
-        -> Option<JoinHandle<()>> {
-        match cp.get_content() {
-            Some(content) => Some(self.inverted_index.insert(key, content)),
-            None => None,
-        }
-    }
-
-    #[inline]
-    pub fn remove_content(&self, key: K) -> Option<JoinHandle<()>>
-    where 
-        Doc: Document + GetContent 
-    {
-        if let Some(doc) = self.collection.get(&key) {
-            if let Some(content) = doc.value().get_content() {
-                Some(self.inverted_index.remove(key, content))   
-            } else {
-                None
-            }
-        } else {
-            None
-        }
     }
 
     /// remove from storage and persist to disk
@@ -209,6 +195,11 @@ where
                 // remove from view
                 if let Some(view_name) = doc.filter() {
                     self.tag_index.remove_from_view(&view_name, &key)
+                }
+
+                // remove from invertedIndex
+                if let Some(content) = doc.value().get_content() {
+                    let _ = self.inverted_index.remove(key, content).await;
                 }
 
                 // remove from tag_index
@@ -410,26 +401,11 @@ where
             for qline in iter {
                 let query: RQuery<K, Doc> = bincode::deserialize(&qline.unwrap()).unwrap();
                 match query {
-                    RQuery::Insert(key, doc) => {
-                        // Insert to indexes
-                        let _ = self.hash_index.insert(&key, &doc);
-
-                        // Insert to tag_index
-                        self.tag_index.insert(&key, &doc);
-
-                        // use collection insert to avoid rewrite to log after insert
-                        self.collection.insert(key, doc);
+                    RQuery::Insert(key, doc) => {                        
+                        let _ = self.insert(key, doc).await;
                     }
                     RQuery::Remove(key) => {
-                        if let Some(r) = self.collection.get(&key) {
-                            // remove hash_index
-                            self.hash_index.remove( r.value());
-
-                            // remove from tag_index
-                            self.tag_index.remove(&key, r.value());
-
-                            self.collection.remove(&key);
-                        }
+                        let _ = self.remove(key).await;
                     }
                 }
             }

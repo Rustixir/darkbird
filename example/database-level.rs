@@ -80,6 +80,12 @@ impl document::MaterializedView for Account {
     fn filter(&self) -> Option<String> { None }
 }
 
+impl document::FullText for Account {
+    fn get_content(&self) -> Option<String> {
+        None
+    }
+}
+
 // ==========================================
 
 #[derive(Clone, Serialize, Deserialize)]
@@ -106,3 +112,8 @@ impl document::MaterializedView for AuthData {
     fn filter(&self) -> Option<String> { None }
 }
 
+impl document::FullText for AuthData {
+    fn get_content(&self) -> Option<String> {
+        None
+    }
+}

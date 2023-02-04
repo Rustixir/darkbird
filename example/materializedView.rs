@@ -85,3 +85,10 @@ impl document::MaterializedView for User {
         }
     }
 }
+
+
+impl document::FullText for User {
+    fn get_content(&self) -> Option<String> {
+        None
+    }
+}
