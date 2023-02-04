@@ -5,6 +5,8 @@ mod index;
 mod disk_log;
 pub mod document;
 mod router;
+pub mod database;
+pub mod schema;
 
 
 pub use async_trait::async_trait;
@@ -42,6 +44,7 @@ pub enum SessionResult {
     Timeout,
     Full,
     NoResponse,
+    DataStoreNotFound,
     Err(StatusResult),
 }
 
@@ -65,6 +68,7 @@ pub struct Options<'a> {
     storage_name: &'a str,
     total_page_size: usize,
     stype: StorageType,
+    off_reporter: bool
 }
 
 impl<'a> Options<'a> {
@@ -73,12 +77,14 @@ impl<'a> Options<'a> {
         storage_name: &'a str,
         total_page_size: usize,
         stype: StorageType,
+        off_reporter: bool
     ) -> Self {
         Options {
             path,
             storage_name,
             total_page_size,
             stype,
+            off_reporter
         }
     }
 }

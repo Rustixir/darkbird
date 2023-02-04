@@ -79,7 +79,7 @@ where
                         inverted_index: InvertedIndex::new(),
                         wal_session: Some(wal_session),
                         reporter_session: reporter,
-                        off_reporter: false,
+                        off_reporter: ops.off_reporter,
                     };
 
                     // load from disk
@@ -103,18 +103,13 @@ where
                 inverted_index: InvertedIndex::new(),
                 wal_session: None,
                 reporter_session: reporter,
-                off_reporter: false,
+                off_reporter: ops.off_reporter,
             };
 
             // loader off
 
             return Ok(st);
         }
-    }
-
-    #[inline]
-    pub fn off_reporter(&mut self) {
-        self.off_reporter = true;
     }
 
     /// subscribe to Reporter
