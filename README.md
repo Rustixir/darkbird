@@ -27,7 +27,7 @@ because provide Schema for building database and all operation do with database 
 ## Crate
 
 ```
-darkbird = "5.0.1"
+darkbird = "5.0.2"
 ```
 
 ## Examples
