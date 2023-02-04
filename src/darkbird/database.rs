@@ -1,11 +1,10 @@
 use anymap::AnyMap;
 use dashmap::{mapref::one::Ref, iter::Iter, DashSet};
-use simple_wal::LogError;
 use tokio::sync::mpsc::Sender;
 use std::hash::Hash;
 use serde::{de::DeserializeOwned, Serialize};
 
-use crate::{Storage, Options, document::Document, Event};
+use crate::{Storage, document::Document, Event};
 
 use super::SessionResult;
 
