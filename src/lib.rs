@@ -12,6 +12,6 @@ pub use darkbird::{
     StorageType,
     migration,
     schema::Schema,
-
+    database::Database,
     async_trait
 };
