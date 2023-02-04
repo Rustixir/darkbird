@@ -38,7 +38,7 @@ See the complete examples [here](https://github.com/Rustixir/darkbird/tree/main/
 - **3.0.0**: Implemented _indexing_, _tagging_, and _range queries_. **Document model must implement tree trait from this version**
 - **3.5.0**: Added _full-text search API_ (`insert_content(document_key, content)`, `remove_content(document_key, content)`, and `search(...)`).
 - **4.0.0**: Added _materialized view_ support. Document models must implement the MaterializedView trait, and API is provided to fetch view models. Uses `&str` instead of `&String` for better performance and API compatibility. All examples are updated.
-- **5.0.0**: migrate from Storage to Database world with Schema builder
+- **5.0.0**: migrated from Storage to Database world with Schema builder
 and Database layer to do all operation also is compatible with older version 
 
 ## Future plans
