@@ -12,7 +12,7 @@ DarkBird is a _document-oriented_, _real-time_, _in-memory_ database solution op
 
 ## Features
 - **Database level**: darkbird was storage, but from ( vsn 5.0.0 ) is full-featured database
-because provide Schema for building database and all operation do with database struct
+because provide Schema for building database and all operation do with database layer
 - **Persistent**: Uses a _non-blocking_ write-ahead-logging engine for data persistence, storing data to multiple pages.
 - **In-memory**: Data is stored in memory, with two modes (_DiskCopies_, _RamCopies_), the first persisting data to disk and reloading the data into memory after restart.
 - **Concurrency**: Uses a high-concurrent HashMap ([_DashMap_](https://github.com/xacrimon/conc-map-bench)) and doesn't require Mutex/RwLock for thread synchronization.
@@ -39,7 +39,7 @@ See the complete examples [here](https://github.com/Rustixir/darkbird/tree/main/
 - **3.5.0**: Added _full-text search API_ (`insert_content(document_key, content)`, `remove_content(document_key, content)`, and `search(...)`).
 - **4.0.0**: Added _materialized view_ support. Document models must implement the MaterializedView trait, and API is provided to fetch view models. Uses `&str` instead of `&String` for better performance and API compatibility. All examples are updated.
 - **5.0.0**: migrate from Storage to Database level with Schema builder
-and Database do all operation also is compatible with older version 
+and Database layer to do all operation also is compatible with older version 
 
 ## Future plans
 - Write comprehensive **documentation** to explain the architecture.
