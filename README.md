@@ -11,7 +11,7 @@
 DarkBird is a _document-oriented_, _real-time_, _in-memory_ database solution optimized for fast **document retrieval**.
 
 ## Features
-- **Database level**: darkbird was storage, but from ( vsn 5.0.0 ) is full-featured database
+- **Database level**: darkbird was storage, but from ( vsn 5.0.1 ) is full-featured database
 because provide Schema for building database and all operation do with database layer
 - **Persistent**: Uses a _non-blocking_ write-ahead-logging engine for data persistence, storing data to multiple pages.
 - **In-memory**: Data is stored in memory, with two modes (_DiskCopies_, _RamCopies_), the first persisting data to disk and reloading the data into memory after restart.
