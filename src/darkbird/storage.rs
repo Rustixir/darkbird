@@ -162,7 +162,7 @@ where
 
         // Insert to InvertedIndex
         if let Some(content) = doc.get_content() {
-            let _ = self.inverted_index.insert(key, content).await;
+            let _ = self.inverted_index.insert(key.clone(), content).await;
         }
 
 
@@ -199,7 +199,7 @@ where
 
                 // remove from invertedIndex
                 if let Some(content) = doc.value().get_content() {
-                    let _ = self.inverted_index.remove(key, content).await;
+                    let _ = self.inverted_index.remove(key.clone(), content).await;
                 }
 
                 // remove from tag_index
