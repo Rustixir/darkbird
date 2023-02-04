@@ -86,6 +86,21 @@ impl document::Range for User {
     }
 }
 
+impl document::MaterializedView for User {
+    fn filter(&self) -> Option<String> {
+        None
+    }
+}
+
+
+impl document::FullText for User {
+    fn get_content(&self) -> Option<String> {
+        None
+    }
+}
+
+
+// ========================================
 
 impl document::Document for User2 {}
 
@@ -108,8 +123,15 @@ impl document::Range for User2 {
     }
 }
 
-impl document::MaterializedView for User {
+impl document::MaterializedView for User2 {
     fn filter(&self) -> Option<String> {
+        None
+    }
+}
+
+
+impl document::FullText for User2 {
+    fn get_content(&self) -> Option<String> {
         None
     }
 }
