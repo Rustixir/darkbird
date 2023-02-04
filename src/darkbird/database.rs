@@ -1,12 +1,11 @@
 use anymap::AnyMap;
 use dashmap::{mapref::one::Ref, iter::Iter, DashSet};
-use parking_lot::RwLock;
 use simple_wal::LogError;
-use tokio::{sync::mpsc::Sender, task::JoinHandle};
+use tokio::sync::mpsc::Sender;
 use std::hash::Hash;
 use serde::{de::DeserializeOwned, Serialize};
 
-use crate::{Storage, Options, document::{Document, GetContent}, Event};
+use crate::{Storage, Options, document::Document, Event};
 
 use super::SessionResult;
 
@@ -71,57 +70,6 @@ impl Database {
             }
         }
     }
-
-
-    #[inline]        
-    pub fn insert_content<K, Doc, ContentProvider: GetContent>(&self, key: K, cp: &ContentProvider) -> Result<Option<JoinHandle<()>>, SessionResult>
-    where
-        Doc: Serialize + DeserializeOwned + Clone + Send + 'static + Document,
-        K:  Serialize
-            + DeserializeOwned
-            + PartialOrd
-            + Ord
-            + PartialEq
-            + Eq
-            + Hash
-            + Clone
-            + Send
-            + Sync
-            + 'static
-    {
-        match self.datastores.get::<Storage<K, Doc>>() {
-            None => Err(SessionResult::DataStoreNotFound),
-            Some(datastore) => {
-                Ok(datastore.insert_content(key, cp))
-            }
-        }
-    }
-
-    
-    #[inline]        
-    pub fn remove_content<K, Doc>(&self, key: K) -> Result<Option<JoinHandle<()>>, SessionResult>
-    where
-        Doc: Serialize + DeserializeOwned + Clone + Send + 'static + Document + GetContent,
-        K:  Serialize
-            + DeserializeOwned
-            + PartialOrd
-            + Ord
-            + PartialEq
-            + Eq
-            + Hash
-            + Clone
-            + Send
-            + Sync
-            + 'static
-    {
-        match self.datastores.get::<Storage<K, Doc>>() {
-            None => Err(SessionResult::DataStoreNotFound),
-            Some(datastore) => {
-                Ok(datastore.remove_content(key))
-            }
-        }
-    }
-
 
     #[inline]        
     pub async fn remove<K, Doc>(&self, key: K) -> Result<(), SessionResult>
