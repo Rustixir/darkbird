@@ -18,11 +18,7 @@ async fn main() {
     let doc = User::new("DanyalMh");
     
 
-    // insert spawn future to progress for processing
-    // return joinHandle and if you want search after insert, always await on this
-    let _ = storage.insert_content(key.clone(), &doc).unwrap().await;
-    
-    storage.insert(key.clone(), doc).await.unwrap();
+    storage.insert(key, doc).await.unwrap();
 
 
     let result = storage.search(String::from("Is AMazing")).await;
@@ -37,7 +33,7 @@ async fn main() {
         // use doc.get_content to get all text to remove complete from storage
         // if you make sure document exist in storage call unwrap unless if document 
         // not exit in storage check result
-        let _ = storage.remove_content(key).unwrap().await;
+        let _ = storage.remove(key).unwrap().await;
     }
 
 
@@ -95,8 +91,7 @@ impl document::MaterializedView for User {
 }
 
 
-// GetContent must impl just, when using ( storage.insert_content(...)  || storage.remove_content(...) )
-impl GetContent for User {
+impl document::FullText for User {
     fn get_content(&self) -> Option<String> {
         Some(self.desc.clone())
     }

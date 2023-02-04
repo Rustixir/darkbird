@@ -23,11 +23,11 @@ because provide Schema for building database and all operation do with database 
 - **Migration**: The storage model is (Key, Document), and you can use `migration::run` to change the existing (Key, Document) data on disk before opening the storage.
 - **External database support**: Copy storage data to Postgres/Cassandra/Scylla and load from it.
 - **Event handling**: Subscribe to any channel to receive events.
-
+()
 ## Crate
 
 ```
-darkbird = "5.0.1"
+darkbird = "5.0.2"
 ```
 
 ## Examples
@@ -40,7 +40,8 @@ See the complete examples [here](https://github.com/Rustixir/darkbird/tree/main/
 - **4.0.0**: Added _materialized view_ support. Document models must implement the MaterializedView trait, and API is provided to fetch view models. Uses `&str` instead of `&String` for better performance and API compatibility. All examples are updated.
 - **5.0.1**: migrated from Storage to Database world with Schema builder
 and Database layer to do all operation also is compatible with older version 
-
+- **5.0.2**: fixedbug persist indexing and changed fullText search api for a bug 
+all examples updates
 ## Future plans
 - Write comprehensive **documentation** to explain the architecture.
 - Add **key expiry** similar to Redis.
