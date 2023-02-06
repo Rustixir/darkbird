@@ -27,7 +27,7 @@ because provide Schema for building database and all operation do with database 
 ## Crate
 
 ```
-darkbird = "5.0.2"
+darkbird = "5.0.3"
 ```
 
 ## Examples
@@ -42,6 +42,7 @@ See the complete examples [here](https://github.com/Rustixir/darkbird/tree/main/
 and Database layer to do all operation also is compatible with older version 
 - **5.0.2**: fixedbug persist indexing and changed fullText search api for a bug 
 all examples updates
+- **5.0.3**: fixedbug loader
 ## Future plans
 - Write comprehensive **documentation** to explain the architecture.
 - Add **key expiry** similar to Redis.
