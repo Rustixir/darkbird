@@ -1,4 +1,3 @@
-
 use serde::{de::DeserializeOwned, Serialize};
 use serde_derive::{Deserialize, Serialize};
 use simple_wal::LogError;
@@ -36,12 +35,14 @@ pub struct Storage<K, Doc: Document> {
     inverted_index: InvertedIndex<K>,
 
     // Wal session
-    wal_session: Option<Session>,
+    wal_session: Session,
 
     // Reporter session
     reporter_session: router::Session<Event<K, Doc>>,
 
     off_reporter: bool,
+
+    off_disk: bool
 }
 
 impl<K, Doc> Storage<K, Doc>
@@ -60,59 +61,45 @@ where
         + 'static,
 {
     pub async fn open<'a>(ops: Options<'a>) -> Result<Self, LogError> {
-        if let StorageType::DiskCopies = ops.stype {
-            match DiskLog::open(ops.path, ops.storage_name, ops.total_page_size) {
-                Err(e) => return Err(e),
-                Ok(disklog) => {
-                    // Run DiskLog
+        
+        match DiskLog::open(ops.path, ops.storage_name, ops.total_page_size) {
+            Err(e) => return Err(e),
+            Ok(disklog) => {
+                // Run DiskLog
+                let off_disk = if let StorageType::RamCopies = ops.stype { true } else { false };
 
-                    // Run Reporter
-                    let reporter = Router::<Event<K, Doc>>::new(vec![]).unwrap().run_service();
+                // Run Reporter
+                let reporter = Router::<Event<K, Doc>>::new(vec![]).unwrap().run_service();
 
-                    // Create Storage
-                    let mut st = Storage {
-                        collection: DashMap::new(),
-                        hash_index: HashIndex::new(),
-                        tag_index: TagIndex::new(),
-                        range_index: RangeIndex::new(),
-                        inverted_index: InvertedIndex::new(),
-                        wal_session: None,
-                        reporter_session: reporter,
-                        off_reporter: ops.off_reporter,
-                    };
+                // Run disk_log
+                let wal_session = disklog.run_service();
 
-                    // load from disk
-                    st.loader().await;
 
-                    st.wal_session = Some(disklog.run_service());
+                // Create Storage
+                let mut st = Storage {
+                    collection: DashMap::new(),
+                    hash_index: HashIndex::new(),
+                    tag_index: TagIndex::new(),
+                    range_index: RangeIndex::new(),
+                    inverted_index: InvertedIndex::new(),
+                    wal_session: wal_session,
+                    reporter_session: reporter,
+                    off_reporter: ops.off_reporter,
+                    off_disk: true
+                };
 
-                    return Ok(st);
-                }
+
+                // load from disk
+                st.loader().await;
+
+
+                // because we want loader dont write to disk_log
+                st.off_disk = off_disk;
+
+                return Ok(st);
             }
-        } else {
-            // Off DiskLog
-
-            // Run Reporter
-            let reporter = Router::<Event<K, Doc>>::new(vec![]).unwrap().run_service();
-
-            // Create Storage
-            let st = Storage {
-                collection: DashMap::new(),
-                hash_index: HashIndex::new(),
-                tag_index: TagIndex::new(),
-                range_index: RangeIndex::new(),
-                inverted_index: InvertedIndex::new(),
-                wal_session: None,
-                reporter_session: reporter,
-                off_reporter: ops.off_reporter,
-            };
-
-            // loader off
-            st.loader().await;
-
-
-            return Ok(st);
         }
+
     }
 
     /// subscribe to Reporter
@@ -135,16 +122,19 @@ where
     #[inline]
     pub async fn insert(&self, key: K, doc: Doc) -> Result<(), SessionResult> {
 
-        if let Some(wal) = &self.wal_session {
+        if !self.off_disk || !self.off_reporter {
             let query = RQuery::Insert(key.clone(), doc.clone());
-            
-            if let Err(e) = wal.log(bincode::serialize(&query).unwrap()).await {
-                return Err(e);
+
+            if !self.off_disk {
+                if let Err(e) = self.wal_session.log(bincode::serialize(&query).unwrap()).await {
+                    return Err(e);
+                }
             }
-            
+
             if !self.off_reporter {
                 let _ = self.reporter_session.dispatch(Event::Query(query)).await;
             }
+
         }
 
     
@@ -188,6 +178,20 @@ where
         match self.collection.get(&key) {
             Some(doc) => {
 
+                if !self.off_disk || !self.off_reporter {
+                    let query = RQuery::<K, Doc>::Remove(key.clone());
+        
+                    if !self.off_disk {
+                        if let Err(e) = self.wal_session.log(bincode::serialize(&query).unwrap()).await {
+                            return Err(e);
+                        }
+                    }
+        
+                    if !self.off_reporter {
+                        let _ = self.reporter_session.dispatch(Event::Query(query)).await;
+                    }
+                    
+                }
 
                 // remove from hash_index
                 self.hash_index.remove(doc.value());
@@ -214,35 +218,7 @@ where
 
         self.collection.remove(&key);
 
-        let query = RQuery::<K, Doc>::Remove(key);
-    
-        match &self.wal_session {
-            Some(wal) => {
-                // Send to DiskLog
-                match wal.log(bincode::serialize(&query).unwrap()).await {
-                    Ok(_) => {
-                        // if Reporter is on
-                        if !self.off_reporter {
-                            // Send to Reporter
-                            let _ = self.reporter_session.dispatch(Event::Query(query)).await;
-                        }
-
-                        Ok(())
-                    }
-                    Err(e) => Err(e),
-                }
-            }
-            None => {
-                // if Reporter is on
-                if !self.off_reporter {
-                    // Send to Reporter
-                    let _ = self.reporter_session.dispatch(Event::Query(query)).await;
-                }
-
-                Ok(())
-            }
-        }
-
+        Ok(())
     }
 
     /// gets documents  
@@ -365,7 +341,7 @@ where
     #[inline]
     async fn loader(&self) {
         // when storage just open with Disc Copies option it call loader, else it don't call
-        let wal = self.wal_session.as_ref().unwrap();
+        let wal = &self.wal_session;
 
         let mut page_index = 1;
 
@@ -426,3 +402,4 @@ pub enum Event<K, Doc> {
     Query(RQuery<K, Doc>),
     Subscribed(Sender<Event<K, Doc>>), 
 }
+
