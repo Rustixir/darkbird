@@ -145,7 +145,7 @@ dependencies = [
 
 [[package]]
 name = "darkbird"
-version = "5.0.2"
+version = "6.0.0"
 dependencies = [
  "anymap",
  "async-trait",

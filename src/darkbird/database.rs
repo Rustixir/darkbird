@@ -1,12 +1,12 @@
 use anymap::AnyMap;
 use dashmap::{mapref::one::Ref, iter::Iter, DashSet};
 use tokio::sync::mpsc::Sender;
-use std::hash::Hash;
+use std::{hash::Hash, sync::Arc, time::Duration};
 use serde::{de::DeserializeOwned, Serialize};
 
 use crate::{Storage, document::Document, Event};
 
-use super::SessionResult;
+use super::{SessionResult, storage_redis::RedisStorage};
 
 
 
@@ -361,5 +361,107 @@ impl Database {
             }
         }
     }
+
+
+
+
+    /// Just for redisstore engine
+    #[inline]
+    pub fn set<K, Doc>(&self, key: K, value: Doc, expire: Option<Duration>) -> Result<(), SessionResult>
+    where
+        Doc: Clone + Send + Sync + 'static,
+        K:  Clone
+            + PartialOrd
+            + Ord
+            + PartialEq
+            + Eq
+            + Hash
+            + Send
+            + 'static
+    {
+        match self.datastores.get::<RedisStorage<K, Doc>>() {
+            None => Err(SessionResult::DataStoreNotFound),
+            Some(datastore) => {
+                datastore.set(key, value, expire);
+                Ok(())
+            }
+        }
+    }
+
+
+    /// Just for redisstore engine
+    #[inline]
+    pub fn get<K, Doc>(&self, key: &K) -> Result<Option<Arc<Doc>>, SessionResult>
+    where
+        Doc: Clone + Send + Sync + 'static,
+        K:  Clone
+            + PartialOrd
+            + Ord
+            + PartialEq
+            + Eq
+            + Hash
+            + Send
+            + 'static
+    {
+        match self.datastores.get::<RedisStorage<K, Doc>>() {
+            None => Err(SessionResult::DataStoreNotFound),
+            Some(datastore) => {
+                Ok(datastore.get(key))
+            }
+        }
+    }
+
+
+    /// Just for redisstore engine
+    #[inline]
+    pub fn del<K, Doc>(&self, key: &K) -> Result<(), SessionResult>
+    where
+        Doc: Clone + Send + Sync + 'static,
+        K:  Clone
+            + PartialOrd
+            + Ord
+            + PartialEq
+            + Eq
+            + Hash
+            + Send
+            + 'static
+    {
+        match self.datastores.get::<RedisStorage<K, Doc>>() {
+            None => Err(SessionResult::DataStoreNotFound),
+            Some(datastore) => {
+                Ok(datastore.del(key))
+            }
+        }
+    }
+
+
+
+    /// Just for redisstore engine
+    #[inline]
+    pub fn set_nx<K, Doc>(&self, key: K, value: Doc, expire: Option<Duration>) -> Result<bool, SessionResult>
+    where
+        Doc: Clone + Send + Sync + 'static,
+        K:  Clone
+            + PartialOrd
+            + Ord
+            + PartialEq
+            + Eq
+            + Hash
+            + Send
+            + 'static
+    {
+        match self.datastores.get::<RedisStorage<K, Doc>>() {
+            None => Err(SessionResult::DataStoreNotFound),
+            Some(datastore) => {
+                Ok(datastore.set_nx(key, value, expire))
+            }
+        }
+    }
+
+
+
+    
+
+
 
 }
