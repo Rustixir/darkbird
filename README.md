@@ -20,6 +20,8 @@ because provide Schema for building database and all operation do with database 
 - **Full-text search**: Supports full-text search operations since version 3.5.0.
 - **Materialized view**: Provides a trait for the document model `(doc.filter(...))` that returns `Some(view_name)` or `None` when a document is inserted into the storage.
 - **Tagging**: Each document can have multiple tags, and one tag can refer to many documents, making it great for indexing groups of documents for fast retrieval by key.
+- **Expiration**: from vsn 6.0.0 support key expiry.
+- **Atomic Operation**: from vsn 6.0.0 support Atomic Operation (just like redis setNx)
 - **Migration**: The storage model is (Key, Document), and you can use `migration::run` to change the existing (Key, Document) data on disk before opening the storage.
 - **External database support**: Copy storage data to Postgres/Cassandra/Scylla and load from it.
 - **Event handling**: Subscribe to any channel to receive events.
@@ -27,7 +29,7 @@ because provide Schema for building database and all operation do with database 
 ## Crate
 
 ```
-darkbird = "5.0.2"
+darkbird = "6.0.0"
 ```
 
 ## Examples
@@ -42,7 +44,9 @@ See the complete examples [here](https://github.com/Rustixir/darkbird/tree/main/
 and Database layer to do all operation also is compatible with older version 
 - **5.0.2**: fixedbug persist indexing and changed fullText search api for a bug 
 all examples updates
+- **6.0.0**: added another storage Engine for supporting:
+  atomic operation (just like redis setNx), expiration and simpler api  
 ## Future plans
 - Write comprehensive **documentation** to explain the architecture.
-- Add **key expiry** similar to Redis.
+- **Web-based GUI** for management application, **run migration, change data, ...**
 - **Distribution**.

@@ -7,6 +7,7 @@ pub mod document;
 mod router;
 pub mod database;
 pub mod schema;
+pub mod storage_redis;
 
 
 pub use async_trait::async_trait;
@@ -45,6 +46,7 @@ pub enum SessionResult {
     Full,
     NoResponse,
     DataStoreNotFound,
+    UnImplement,
     Err(StatusResult),
 }
 
@@ -63,12 +65,13 @@ pub enum StorageType {
     DiskCopies,
 }
 
+
 pub struct Options<'a> {
     path: &'a str,
     storage_name: &'a str,
     total_page_size: usize,
     stype: StorageType,
-    off_reporter: bool
+    off_reporter: bool,
 }
 
 impl<'a> Options<'a> {

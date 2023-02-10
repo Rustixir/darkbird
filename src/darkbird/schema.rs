@@ -5,7 +5,7 @@ use serde::{Serialize, de::DeserializeOwned};
 
 use crate::{Options, document::Document, Storage};
 
-use super::database::Database;
+use super::{database::Database, storage_redis::RedisStorage};
 
 
 
@@ -26,7 +26,7 @@ impl Schema {
 
     pub async fn with_datastore<'a, K, Doc>(mut self, opts: Options<'a>) -> Result<Schema, SchemaError> 
     where
-        Doc: Serialize + DeserializeOwned + Clone + Send + 'static + Document,
+        Doc: Serialize + DeserializeOwned + Clone + Sync + Send + 'static + Document,
         K:  Serialize
             + DeserializeOwned
             + PartialOrd
@@ -48,7 +48,6 @@ impl Schema {
             return Err(SchemaError::DatastoreAlreadyExist(opts.storage_name.to_owned()))
         }
 
-
         match Storage::<K, Doc>::open(opts).await {
             Err(e) => Err(SchemaError::OpenFailed(e)),
             Ok(ds) => {
@@ -56,7 +55,39 @@ impl Schema {
                 Ok(self)
             }
         }
+        
     }
+
+
+
+    pub async fn with_redisstore<K, Doc>(mut self, storage_name: &str) -> Result<Schema, SchemaError> 
+    where
+        Doc: Clone + Sync + Send + 'static,
+        K:  
+            PartialOrd
+            + Ord
+            + PartialEq
+            + Eq
+            + Hash
+            + Clone
+            + Send
+            + Sync
+            + 'static
+    {
+
+        if self.names.contains(storage_name) {
+            return Err(SchemaError::DatastoreAlreadyExist(storage_name.to_owned()))
+        }
+
+        if let Some(_) = self.datastores.get::<RedisStorage<K, Doc>>() {
+            return Err(SchemaError::DatastoreAlreadyExist(storage_name.to_owned()))
+        }
+
+        self.datastores.insert(RedisStorage::<K, Doc>::new());
+        Ok(self)
+        
+    }
+
 
 
     pub fn build(self) -> Database {
