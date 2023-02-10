@@ -11,7 +11,7 @@
 DarkBird is a _document-oriented_, _real-time_, _in-memory_ database solution optimized for fast **document retrieval**.
 
 ## Features
-- **Database level**: darkbird was storage, but from ( vsn 5.0.1 ) is full-featured database
+- **Database level**: darkbird was storage, but from ( vsn 5.0.3 ) is full-featured database
 because provide Schema for building database and all operation do with database layer
 - **Persistent**: Uses a _non-blocking_ write-ahead-logging engine for data persistence, storing data to multiple pages.
 - **In-memory**: Data is stored in memory, with two modes (_DiskCopies_, _RamCopies_), the first persisting data to disk and reloading the data into memory after restart.
@@ -44,6 +44,7 @@ See the complete examples [here](https://github.com/Rustixir/darkbird/tree/main/
 and Database layer to do all operation also is compatible with older version 
 - **5.0.2**: fixedbug persist indexing and changed fullText search api for a bug 
 all examples updates
+- **5.0.3**: fixedbug loader
 - **6.0.0**: added another storage Engine for supporting:
   atomic operation (just like redis setNx), expiration and simpler api  
 ## Future plans
