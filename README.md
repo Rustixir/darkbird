@@ -25,7 +25,7 @@ because provide Schema for building database and all operation do with database 
 - **Migration**: The storage model is (Key, Document), and you can use `migration::run` to change the existing (Key, Document) data on disk before opening the storage.
 - **External database support**: Copy storage data to Postgres/Cassandra/Scylla and load from it.
 - **Event handling**: Subscribe to any channel to receive events.
-()
+
 ## Crate
 
 ```
