@@ -49,5 +49,4 @@ all examples updates
   atomic operation (just like redis setNx), expiration and simpler api  
 ## Future plans
 - Write comprehensive **documentation** to explain the architecture.
-- **Web-based GUI** for management application, **run migration, change data, ...**
 - **Distribution**.
