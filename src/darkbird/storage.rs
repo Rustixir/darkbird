@@ -1,6 +1,5 @@
 use serde::{de::DeserializeOwned, Serialize};
 use serde_derive::{Deserialize, Serialize};
-use simple_wal::LogError;
 use std::hash::Hash;
 use tokio::sync::mpsc::Sender;
 
@@ -8,7 +7,7 @@ use dashmap::{iter::Iter, mapref::one::Ref, DashMap, DashSet};
 
 
 use super::{
-    disk_log::{DiskLog, Session},
+    wal::disk_log::{DiskLog, Session},
     index::{hash::HashIndex, range::RangeIndex, tags::TagIndex, inverted_index::InvertedIndex},
     router::{self, Router},
     Options, StatusResult, StorageType,
@@ -60,10 +59,10 @@ where
         + Sync
         + 'static,
 {
-    pub async fn open<'a>(ops: Options<'a>) -> Result<Self, LogError> {
+    pub async fn open<'a>(ops: Options<'a>) -> Result<Self, String> {
         
         match DiskLog::open(ops.path, ops.storage_name, ops.total_page_size) {
-            Err(e) => return Err(e),
+            Err(e) => return Err(e.to_string()),
             Ok(disklog) => {
                 // Run DiskLog
                 let off_disk = if let StorageType::RamCopies = ops.stype { true } else { false };
@@ -90,7 +89,11 @@ where
 
 
                 // load from disk
-                st.loader().await;
+                if let Err(x) = st.loader().await {
+                    if x != "End" {
+                        return Err(x);
+                    } 
+                }
 
 
                 // because we want loader dont write to disk_log
@@ -337,9 +340,22 @@ where
     }
 
     
+    #[inline]
+    pub fn collection_len(self) -> usize {
+        self.collection.len()
+    }
+
+
+    // #[inline]
+    // pub fn memory_usage(self) -> usize {
+    // }
+
+
+
+
     /// load storage from disk
     #[inline]
-    async fn loader(&self) {
+    async fn loader(&self) -> Result<(), String> {
         // when storage just open with Disc Copies option it call loader, else it don't call
         let wal = &self.wal_session;
 
@@ -350,16 +366,11 @@ where
             let mut logfile = match wal.get_page(page_index).await {
                 Ok(lf) => lf,
                 Err(sess_res) => {
-                    if let SessionResult::Err(status_res) = sess_res {
-                        match status_res {
-                            StatusResult::LogErr(e) => eprintln!("==> {:?}", e),
-                            StatusResult::IoError(e) => eprintln!("==> {:?}", e),
-                            StatusResult::Err(e) => eprintln!("==> {:?}", e),
-                            _ => {}
-                        }
+                    if let SessionResult::Err(e) = sess_res {
+                        return Err(e.to_string())
                     }
 
-                    return;
+                    return Err("disk_log closed".to_string())
                 }
             };
 
@@ -370,12 +381,23 @@ where
                 Ok(iter) => iter,
                 Err(e) => {
                     eprintln!("==> {:?}", e);
-                    return;
+                    return Err(e.to_string());
                 }
             };
 
             for qline in iter {
-                let query: RQuery<K, Doc> = bincode::deserialize(&qline.unwrap()).unwrap();
+                let bytes = match qline {
+                    Ok(ql)  => ql,
+                    Err(e) => return Err(e.to_string()),
+                };
+
+                let query: RQuery<K, Doc> = match bincode::deserialize(&bytes) {
+                    Ok(rq) => rq,
+                    Err(e) => {
+                        return Err(e.to_string());
+                    }
+                };
+
                 match query {
                     RQuery::Insert(key, doc) => {                        
                         let _ = self.insert(key, doc).await;
@@ -396,10 +418,38 @@ pub enum RQuery<K, Doc> {
     Remove(K),
 }
 
+impl<K, Doc> RQuery<K, Doc> {
+    
+    pub fn from_raw(type_id: &'static str, key: K, doc: Option<Doc>) -> RQuery<K, Doc> {
+        match type_id {
+            RQUERY_INSERT_TYPE => RQuery::Insert(key, doc.unwrap()),
+            RQUERY_REMOVE_TYPE => RQuery::Remove(key),
+            _ => panic!("failed")
+        }
+    }
+
+    pub fn into_raw(self) -> (&'static str, K, Option<Doc>) {
+        match self {
+            RQuery::Insert(k, d) => (RQUERY_INSERT_TYPE, k, Some(d)),
+            RQuery::Remove(k) => (RQUERY_REMOVE_TYPE, k, None),
+        }
+    }
+
+}
+
+
+pub const RQUERY_INSERT_TYPE: &'static str = "Insert";
+pub const RQUERY_REMOVE_TYPE: &'static str = "Remove";
+
+
+
+
+
 // used for reporting
 #[derive(Clone)]
 pub enum Event<K, Doc> {
     Query(RQuery<K, Doc>),
     Subscribed(Sender<Event<K, Doc>>), 
 }
+
 

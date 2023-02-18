@@ -21,7 +21,7 @@ async fn main() {
     // let stype = StorageType::DiskCopies;
 
     
-    let ops = Options::new(path, storage_name, total_page_size, StorageType::RamCopies);
+    let ops = Options::new(path, storage_name, total_page_size, StorageType::RamCopies, true);
 
 
     let s = Storage::<Pid, User>::open(ops).await.unwrap();

@@ -22,14 +22,15 @@ because provide Schema for building database and all operation do with database 
 - **Tagging**: Each document can have multiple tags, and one tag can refer to many documents, making it great for indexing groups of documents for fast retrieval by key.
 - **Expiration**: from vsn 6.0.0 support key expiry.
 - **Atomic Operation**: from vsn 6.0.0 support Atomic Operation (just like redis setNx)
-- **Migration**: The storage model is (Key, Document), and you can use `migration::run` to change the existing (Key, Document) data on disk before opening the storage.
+- **Migration**: The storage model is (Key, Document), and you can use `migration` to change the existing (Key, Document) data on disk before opening the storage.
+- **Backup / Restore** fron vsn-6.1.0 support Backup/restore
 - **External database support**: Copy storage data to Postgres/Cassandra/Scylla and load from it.
 - **Event handling**: Subscribe to any channel to receive events.
 
 ## Crate
 
 ```
-darkbird = "6.0.0"
+darkbird = "6.0.1"
 ```
 
 ## Examples
@@ -47,6 +48,7 @@ all examples updates
 - **5.0.3**: fixedbug loader
 - **6.0.0**: added another storage Engine for supporting:
   atomic operation (just like redis setNx), expiration and simpler api  
+- **6.0.1**: Backup/Restore _ new migration component (recover self if occure error)
 ## Future plans
 - Write comprehensive **documentation** to explain the architecture.
 - **Web-based GUI** for management application, **run migration, change data, ...**

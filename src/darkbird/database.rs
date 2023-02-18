@@ -229,7 +229,6 @@ impl Database {
 
 
 
-
     #[inline]        
     pub fn fetch_view<K, Doc>(&self, view_name: &str) -> Result<Vec<Ref<K, Doc>>, SessionResult>
     where
@@ -281,7 +280,6 @@ impl Database {
             }
         }
     }
-
 
 
 

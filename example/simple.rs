@@ -23,7 +23,7 @@ async fn main() {
     //
     // let stype = StorageType::DiskCopies;
 
-    let ops = Options::new(path, storage_name, total_page_size, StorageType::RamCopies);
+    let ops = Options::new(path, storage_name, total_page_size, StorageType::RamCopies, true);
 
     // Storage is built for high concurrency usage
     // dont need to Mutex / Rwlock, it is safe for shared between thread

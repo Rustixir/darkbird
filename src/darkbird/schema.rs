@@ -1,5 +1,4 @@
 use anymap::AnyMap;
-use simple_wal::LogError;
 use std::{hash::Hash, collections::HashSet};
 use serde::{Serialize, de::DeserializeOwned};
 
@@ -49,7 +48,7 @@ impl Schema {
         }
 
         match Storage::<K, Doc>::open(opts).await {
-            Err(e) => Err(SchemaError::OpenFailed(e)),
+            Err(e) => Err(SchemaError::Err(e)),
             Ok(ds) => {
                 self.datastores.insert(ds);
                 Ok(self)
@@ -100,6 +99,6 @@ impl Schema {
 
 #[derive(Debug)]
 pub enum SchemaError {
-    OpenFailed(LogError),
-    DatastoreAlreadyExist(String)
+    DatastoreAlreadyExist(String),
+    Err(String)
 }

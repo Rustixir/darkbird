@@ -22,7 +22,7 @@ async fn main() {
     // let stype = StorageType::DiskCopies;
 
     
-    let ops = Options::new(path, storage_name, total_page_size, StorageType::RamCopies);
+    let ops = Options::new(path, storage_name, total_page_size, StorageType::RamCopies, true);
 
 
     // ***************************************************************************
