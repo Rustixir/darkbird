@@ -29,7 +29,7 @@ async fn main() {
 
     
 
-    let s = Storage::<Pid, User2>::open(path, storage_name, total_page_size).await.unwrap();
+    let s = Storage::<Pid, User2>::open(path, storage_name, total_page_size, true).await.unwrap();
 
     
 }

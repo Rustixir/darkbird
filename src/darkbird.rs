@@ -2,19 +2,19 @@ use simple_wal::LogError;
 use std::{io::Error, time::Duration};
 
 mod index;
-mod disk_log;
 pub mod document;
 mod router;
 pub mod database;
 pub mod schema;
 pub mod storage_redis;
-
+pub mod wal;
+pub mod persistent_worker;
+pub mod storage;
 
 pub use async_trait::async_trait;
 
-pub mod migration;
-pub mod persistent_worker;
-pub mod storage;
+
+
 
 pub static TIMEOUT: Duration = Duration::from_secs(5);
 
@@ -39,6 +39,20 @@ pub enum StatusResult {
     Duplicate,
 }
 
+impl ToString for StatusResult {
+    fn to_string(&self) -> String {
+        match self {
+            StatusResult::LogErr(e) => e.to_string(),
+            StatusResult::IoError(e) => e.to_string(),
+            StatusResult::End => "End".to_string(),
+            StatusResult::ReporterIsOff => "ReporterIsOff".to_string(),
+            StatusResult::Err(e) => e.to_string(),
+            StatusResult::Duplicate => "Duplicate".to_string()
+        }
+    }
+}
+
+
 #[derive(Debug)]
 pub enum SessionResult {
     Closed,
@@ -50,6 +64,21 @@ pub enum SessionResult {
     Err(StatusResult),
 }
 
+impl ToString for SessionResult {
+    fn to_string(&self) -> String {
+        match self {
+            SessionResult::Closed => "Closed".to_string(),
+            SessionResult::Timeout => "Timeout".to_string(),
+            SessionResult::Full => "Full".to_string(),
+            SessionResult::NoResponse => "NoResponse".to_string(),
+            SessionResult::DataStoreNotFound => "DataStoreNotFound".to_string(),
+            SessionResult::UnImplement => "UnImplement".to_string(),
+            SessionResult::Err(e) => e.to_string()
+        }
+    }
+}
+
+
 #[allow(dead_code)]
 pub enum WorkerState {
     Continue,
@@ -57,6 +86,7 @@ pub enum WorkerState {
     Empty,
 }
 
+#[derive(Clone)]
 pub enum StorageType {
     // Store to memory
     RamCopies,
@@ -66,6 +96,7 @@ pub enum StorageType {
 }
 
 
+#[derive(Clone)]
 pub struct Options<'a> {
     path: &'a str,
     storage_name: &'a str,

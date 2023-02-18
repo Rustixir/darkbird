@@ -8,7 +8,7 @@ async fn main() {
     let total_page_size = 1000;
     let stype = StorageType::DiskCopies;
 
-    let ops = Options::new(path, storage_name, total_page_size, stype);
+    let ops = Options::new(path, storage_name, total_page_size, stype, true);
     let storage = Storage::<Pid, User>::open(ops).await.unwrap();
 
     for num in 1..=5 {

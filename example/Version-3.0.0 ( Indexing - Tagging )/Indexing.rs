@@ -9,7 +9,7 @@ async fn main() {
     let stype = StorageType::DiskCopies;
 
 
-    let ops = Options::new(path, storage_name, total_page_size, stype);
+    let ops = Options::new(path, storage_name, total_page_size, stype, true);
     let storage = Storage::<Pid, User>::open(ops).await.unwrap();
 
 

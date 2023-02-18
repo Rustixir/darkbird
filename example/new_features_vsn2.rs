@@ -7,7 +7,7 @@ async fn main() {
     let total_page_size = 1000;
 
     let stype = StorageType::RamCopies ;
-    let ops = Options::new(path, storage_name, total_page_size, StorageType::RamCopies);
+    let ops = Options::new(path, storage_name, total_page_size, StorageType::RamCopies, true);
 
 
     // **** Performance Improve vsn-2 ****
