@@ -1,5 +1,4 @@
-use serde::{de::DeserializeOwned, Serialize};
-use serde_derive::{Deserialize, Serialize};
+use serde::{Serialize, Deserialize, de::DeserializeOwned};
 use std::hash::Hash;
 use tokio::sync::mpsc::Sender;
 
