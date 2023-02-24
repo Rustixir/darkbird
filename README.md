@@ -49,6 +49,4 @@ all examples updates
 - **6.0.0**: added another storage Engine for supporting:
   atomic operation (just like redis setNx), expiration and simpler api  
 - **6.0.1**: Backup/Restore _ new migration component (recover self if occure error)
-## Future plans
-- Write comprehensive **documentation** to explain the architecture.
-- **Distribution**.
+
