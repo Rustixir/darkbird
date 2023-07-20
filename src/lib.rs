@@ -2,6 +2,8 @@
 
 mod darkbird;
 
+
+pub use serde::{Serialize, Deserialize};
 pub use darkbird::{
     storage::Storage,
     storage_redis,
@@ -14,5 +16,7 @@ pub use darkbird::{
     StorageType,
     schema::Schema,
     database::Database,
-    async_trait
+    async_trait,
 };
+
+
