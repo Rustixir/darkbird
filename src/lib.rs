@@ -3,7 +3,7 @@
 mod darkbird;
 
 
-pub use serde::{Serialize, Deserialize};
+pub use serde;
 pub use darkbird::{
     storage::Storage,
     storage_redis,
