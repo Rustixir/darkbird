@@ -30,7 +30,7 @@ because provide Schema for building database and all operation do with database 
 ## Crate
 
 ```
-darkbird = "6.1.5"
+darkbird = "6.1.6"
 ```
 
 ## Examples
