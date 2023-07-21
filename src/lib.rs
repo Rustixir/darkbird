@@ -2,6 +2,7 @@
 
 mod darkbird;
 
+pub use dashmap;
 
 pub use serde;
 pub use darkbird::{
