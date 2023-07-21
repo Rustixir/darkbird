@@ -35,6 +35,8 @@ darkbird = "6.1.8"
 
 ## Examples
 See the complete examples [here](https://github.com/Rustixir/darkbird/tree/main/example).
+This branch is Movies store service with (darkbird + actix-web) [here](https://github.com/Rustixir/darkapp/).
+
 
 ## Versions
 - **2.0.0**: Improved _performance_ and added _persistent copy_ of whole data to a database.
