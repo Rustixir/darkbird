@@ -5,6 +5,7 @@ mod darkbird;
 
 pub use serde;
 pub use darkbird::{
+    SessionResult,
     storage::Storage,
     storage_redis,
     wal::{helper::{backup, migration}, page_processor::{Format, Sync, PageProcessor}}, 
