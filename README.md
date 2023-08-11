@@ -18,7 +18,7 @@ because provide Schema for building database and all operation do with database 
 - **Concurrency**: Uses a high-concurrent HashMap ([_DashMap_](https://github.com/xacrimon/conc-map-bench)) and doesn't require Mutex/RwLock for thread synchronization.
 - **Indexing**: Supports indexing, allowing for dynamic decision-making about which document fields to index.
 - **Full-text search**: Supports full-text search operations since version 3.5.0.
-- **Materialized view**: Provides a trait for the document model `(doc.filter(...))` that returns `Some(view_name)` or `None` when a document is inserted into the storage.
+- **Materialized view**: Supports materialized view
 - **Tagging**: Each document can have multiple tags, and one tag can refer to many documents, making it great for indexing groups of documents for fast retrieval by key.
 - **Expiration**: from vsn 6.0.0 support key expiry.
 - **Atomic Operation**: from vsn 6.0.0 support Atomic Operation (just like redis setNx)
