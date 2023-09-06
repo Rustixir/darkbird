@@ -7,7 +7,7 @@
       alt="Download" />
   </a>
 </div>
-
+ 
 DarkBird is a _document-oriented_, _real-time_, _in-memory_ database solution optimized for fast **document retrieval**.
 
 ## Features
