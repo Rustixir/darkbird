@@ -7,8 +7,6 @@ fn factory_option(name: &str) -> Options {
 
 #[tokio::main]
 async fn main() {
-    #[tokio::test]
-    async fn k_nearest_neighbors() {
         let db = Schema::new()
             .with_vecstore(factory_option("LLM"))
             .await
@@ -37,5 +35,4 @@ async fn main() {
                 ("vector2".to_string(), Vector(vec![4.0, 5.0, 6.0]))
             ]
         );
-    }
 }
