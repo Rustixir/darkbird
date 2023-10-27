@@ -2,7 +2,7 @@ use anymap::AnyMap;
 use std::{hash::Hash, collections::HashSet};
 use serde::{Serialize, de::DeserializeOwned};
 
-use crate::{Options, document::Document, Storage};
+use crate::{Options, document::Document, Storage, VecStorage};
 
 use super::{database::Database, storage_redis::RedisStorage};
 
@@ -58,6 +58,27 @@ impl Schema {
     }
 
 
+    pub async fn with_vecstore<'a>(mut self, opts: Options<'a>) -> Result<Schema, SchemaError> {
+
+        if self.names.contains(opts.storage_name) {
+            return Err(SchemaError::DatastoreAlreadyExist(opts.storage_name.to_owned()))
+        }
+
+        if let Some(_) = self.datastores.get::<VecStorage>() {
+            return Err(SchemaError::DatastoreAlreadyExist(opts.storage_name.to_owned()))
+        }
+
+        match VecStorage::open(opts).await {
+            Err(e) => Err(SchemaError::Err(e)),
+            Ok(ds) => {
+                self.datastores.insert(ds);
+                Ok(self)
+            }
+        }
+        
+    }
+
+
 
     pub async fn with_redisstore<K, Doc>(mut self, storage_name: &str) -> Result<Schema, SchemaError> 
     where
@@ -86,6 +107,7 @@ impl Schema {
         Ok(self)
         
     }
+
 
 
 

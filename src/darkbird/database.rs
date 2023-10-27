@@ -4,9 +4,9 @@ use tokio::sync::mpsc::Sender;
 use std::{hash::Hash, sync::Arc, time::Duration};
 use serde::{de::DeserializeOwned, Serialize};
 
-use crate::{Storage, document::Document, Event};
+use crate::{Storage, document::Document, Event, VecStorage, Vector};
 
-use super::{SessionResult, storage_redis::RedisStorage};
+use super::{SessionResult, storage_redis::RedisStorage, vector::VectorId};
 
 
 
@@ -20,6 +20,130 @@ impl Database {
     pub fn open(datastores: AnyMap) -> Database {
         Database { datastores }
     }
+
+
+    #[inline]        
+    pub async fn vec_subscribe(&self, sender: Sender<Event<VectorId, Vector>>) -> Result<(), SessionResult> {
+        match self.datastores.get::<VecStorage>() {
+            None => Err(SessionResult::DataStoreNotFound),
+            Some(datastore) => {
+                datastore.subscribe(sender).await
+            }
+        }
+    }
+
+    #[inline]        
+    pub async fn vec_insert(&self, vector_id: VectorId, vector: Vec<f32>) -> Result<(), SessionResult> {
+        match self.datastores.get::<VecStorage>() {
+            None => Err(SessionResult::DataStoreNotFound),
+            Some(datastore) => {
+                datastore.insert(vector_id, vector).await
+            }
+        }
+    }
+
+    #[inline]        
+    pub async fn vec_insert_with_uuid(&self, vector: Vec<f32>) -> Result<(), SessionResult> {
+        match self.datastores.get::<VecStorage>() {
+            None => Err(SessionResult::DataStoreNotFound),
+            Some(datastore) => {
+                datastore.insert_with_uuid(vector).await
+            }
+        }
+    }
+
+    #[inline]        
+    pub async fn vec_remove(&self, vector_id: VectorId) -> Result<(), SessionResult> {
+        match self.datastores.get::<VecStorage>() {
+            None => Err(SessionResult::DataStoreNotFound),
+            Some(datastore) => {
+                datastore.remove(vector_id).await
+            }
+        }
+    }
+
+    
+    #[inline]        
+    pub fn vec_gets(&self, list: Vec<VectorId>) -> Result<Vec<(String, Vector)>, SessionResult> {
+        match self.datastores.get::<VecStorage>() {
+            None => Err(SessionResult::DataStoreNotFound),
+            Some(datastore) => {
+                let res = datastore.gets(list);
+                Ok(res)
+            }
+        }
+    }
+
+
+    #[inline]        
+    pub fn vec_lookup(&self, vector_id: &VectorId) -> Result<Option<(VectorId, Vector)>, SessionResult> {
+        match self.datastores.get::<VecStorage>() {
+            None => Err(SessionResult::DataStoreNotFound),
+            Some(datastore) => {
+                let res = datastore.lookup(vector_id);
+                Ok(res)
+            }
+        }
+    }
+
+    /// // Define a query vector
+    /// let query_vector = vec![2.0, 3.0, 4.0];
+    ///
+    /// // Find the 2 nearest neighbors to the query vector
+    /// let nearest_neighbors = db.k_nearest_neighbors(&query_vector, 2);
+    /// assert_eq!(nearest_neighbors, vec![
+    ///     ("vector1".to_string(), vec![1.0, 2.0, 3.0]),
+    ///     ("vector2".to_string(), vec![4.0, 5.0, 6.0])
+    /// ]);
+    #[inline]        
+    pub fn vec_k_nearest_neighbors(&self, query: &Vector, k: usize) -> Result<Vec<(VectorId, Vector)>, SessionResult> {
+        match self.datastores.get::<VecStorage>() {
+            None => Err(SessionResult::DataStoreNotFound),
+            Some(datastore) => {
+                let res = datastore.k_nearest_neighbors(query, k);
+                Ok(res)
+            }
+        }
+    }
+
+    #[inline]        
+    pub fn vec_addition(&self, vec_id1: &str, vec_id2: &str) -> Result<Option<Vector>, SessionResult> {
+        match self.datastores.get::<VecStorage>() {
+            None => Err(SessionResult::DataStoreNotFound),
+            Some(datastore) => {
+                let res = datastore.vector_addition(vec_id1, vec_id2);
+                Ok(res)
+            }
+        }
+    }
+
+    /// Performs scalar multiplication of a vector stored in the storage.
+    #[inline]        
+    pub fn vec_scaling(&self, vec_id: &str, scalar: f32) -> Result<Option<Vector>, SessionResult> {
+        match self.datastores.get::<VecStorage>() {
+            None => Err(SessionResult::DataStoreNotFound),
+            Some(datastore) => {
+                let res = datastore.vector_scaling(vec_id, scalar);
+                Ok(res)
+            }
+        }
+    }
+
+
+    /// Performs scalar multiplication of a vector stored in the storage.
+    #[inline]        
+    pub fn vec_subtraction(&self, vec_id: &str, scalar: f32) -> Result<Option<Vector>, SessionResult> {
+        match self.datastores.get::<VecStorage>() {
+            None => Err(SessionResult::DataStoreNotFound),
+            Some(datastore) => {
+                let res = datastore.vector_scaling(vec_id, scalar);
+                Ok(res)
+            }
+        }
+    }
+    
+    
+
 
 
     #[inline]        
