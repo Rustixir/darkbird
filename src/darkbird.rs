@@ -10,6 +10,9 @@ pub mod storage_redis;
 pub mod wal;
 pub mod persistent_worker;
 pub mod storage;
+pub mod vector;
+pub mod storage_vector;
+mod storage_vector_test;
 
 pub use async_trait::async_trait;
 
