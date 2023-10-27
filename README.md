@@ -16,6 +16,7 @@ because provide Schema for building database and all operation do with database 
 - **Persistent**: Uses a _non-blocking_ write-ahead-logging engine for data persistence, storing data to multiple pages.
 - **In-memory**: Data is stored in memory, with two modes (_DiskCopies_, _RamCopies_), the first persisting data to disk and reloading the data into memory after restart.
 - **Concurrency**: Uses a high-concurrent HashMap ([_DashMap_](https://github.com/xacrimon/conc-map-bench)) and doesn't require Mutex/RwLock for thread synchronization.
+- **Vector**: darkbird provide a vector engine for storing and searching vectors
 - **Indexing**: Supports indexing, allowing for dynamic decision-making about which document fields to index.
 - **Full-text search**: Supports full-text search operations since version 3.5.0.
 - **Materialized view**: Provides a trait for the document model `(doc.filter(...))` that returns `Some(view_name)` or `None` when a document is inserted into the storage.
@@ -49,4 +50,5 @@ all examples updates
 - **6.0.0**: added another storage Engine for supporting:
   atomic operation (just like redis setNx), expiration and simpler api  
 - **6.0.1**: Backup/Restore _ new migration component (recover self if occure error)
+- **6.2.0**: Vector Engine
 
