@@ -52,7 +52,7 @@ all examples updates
 - **6.0.0**: added another storage Engine for supporting:
   atomic operation (just like redis setNx), expiration and simpler api  
 - **6.0.1**: Backup/Restore _ new migration component (recover self if occure error)
-- **6.2.1**: Vector Engine
+- **6.2.0**: Vector Engine
 
 <a href="https://www.buymeacoffee.com/xnALmpJF9a" target="_blank"><img src="https://cdn.buymeacoffee.com/buttons/default-yellow.png" alt="Buy Me A Coffee" height="41" width="174"></a>
 
