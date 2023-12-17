@@ -1,6 +1,6 @@
 [package]
 name = "darkbird"
-version = "6.2.0"
+version = "6.2.1"
 edition = "2021"
 authors = ["DanyalMhai@gmail.com"]
 readme = "README.md"
@@ -26,7 +26,6 @@ parking_lot    = "0.12.1"
 anymap         = "0.12.1"
 chrono         = "0.4.23"
 uuid           = {version="1.5.0", features = ["v4", "fast-rng", "macro-diagnostics"]}
-
 
 [profile.dev]
 opt-level = 1

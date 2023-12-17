@@ -158,7 +158,7 @@ where
     }
 
     pub fn set(&self, key: K, value: Doc, expire: Option<Duration>) {
-        let mut state = self.shared.state.lock().unwrap();
+        let mut state: std::sync::MutexGuard<'_, State<K, Doc>> = self.shared.state.lock().unwrap();
 
         
         let id = state.next_id;
@@ -257,6 +257,11 @@ where
     }
 
  
+    pub fn len(&self) -> usize {
+        let mut state = self.shared.state.lock().unwrap();
+        return state.entries.len()
+    }
+
     fn shutdown_purge_task(&self) {
 
         let mut state = self.shared.state.lock().unwrap();
