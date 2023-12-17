@@ -237,6 +237,20 @@ where
         result
     }
 
+        /// gets documents  
+        #[inline]
+        pub fn gets_by_value(&self, list: Vec<K>) -> Vec<Ref<K, Doc>> {
+            let mut result = Vec::with_capacity(list.len());
+    
+            list.iter().for_each(|key| {
+                if let Some(r) = self.collection.get(key) {
+                    result.push(r);
+                }
+            });
+    
+            result
+        }
+
     /// fetch document by range hash_index
     #[inline]
     pub fn range(&self, field_name: &str, from: String, to: String) -> Vec<Ref<K, Doc>> {
@@ -340,14 +354,9 @@ where
 
     
     #[inline]
-    pub fn collection_len(self) -> usize {
+    pub fn collection_len(&self) -> usize {
         self.collection.len()
     }
-
-
-    // #[inline]
-    // pub fn memory_usage(self) -> usize {
-    // }
 
 
 
