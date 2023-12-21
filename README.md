@@ -25,8 +25,8 @@ because provide Schema for building database and all operation do with database 
 - **Atomic Operation**: from vsn 6.0.0 support Atomic Operation (just like redis setNx)
 - **Migration**: The storage model is (Key, Document), and you can use `migration` to change the existing (Key, Document) data on disk before opening the storage.
 - **Backup / Restore** from vsn-6.1.0 support Backup/Restore
-- **External database support**: Copy storage data to Postgres/Cassandra/Scylla and load from it.
-- **Event handling**: Subscribe to any channel to receive events.
+- **External database support**: Supports Copy storage data to Postgres/Cassandra/Scylla and load from it.
+- **Event handling**: Subscribe to darkbird reporter to receive events.
 
 ## Crate
 
