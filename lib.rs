@@ -8,6 +8,7 @@ pub use server;
 pub use serde;
 pub use darkbird::{
     SessionResult,
+    StatusResult,
     storage::Storage,
     storage_vector::VecStorage,
     vector::{VectorId, Vector},
