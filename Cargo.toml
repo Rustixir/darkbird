@@ -1,6 +1,6 @@
 [package]
 name = "darkbird"
-version = "6.2.3"
+version = "6.2.4"
 edition = "2021"
 authors = ["DanyalMhai@gmail.com"]
 readme = "README.md"
