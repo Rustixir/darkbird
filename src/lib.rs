@@ -17,6 +17,7 @@ pub use darkbird::{
     RQuery, 
     Event,
     Options,
+    Config,
     StorageType,
     schema::Schema,
     database::Database,
