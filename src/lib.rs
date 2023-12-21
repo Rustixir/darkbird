@@ -7,6 +7,7 @@ pub use dashmap;
 pub use serde;
 pub use darkbird::{
     SessionResult,
+    StatusResult,
     storage::Storage,
     storage_vector::VecStorage,
     vector::{VectorId, Vector},
