@@ -8,7 +8,7 @@
   </a>
 </div>
 
-DarkBird is a _document-oriented_, _real-time_, _in-memory_ database solution optimized for fast **document retrieval**.
+DarkBird is a _document-oriented_, _in-memory_ database solution optimized for fast **document retrieval**.
 
 ## Features
 - **Database level**: darkbird was storage, but from ( vsn 5.0.3 ) is full-featured database
